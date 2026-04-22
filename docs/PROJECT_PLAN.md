@@ -70,13 +70,13 @@ src/
 
 ## 🔐 FASE 1 — Autenticación & Perfil de Usuario
 
-- [ ] Página de Login (`/login`) con form de email + password
-- [ ] Página de Registro (`/register`) con validación Zod client-side
+- [x] Página de Login (`/login`) con form de email + password
+- [x] Página de Registro (`/register`) con validación Zod client-side
 - [ ] Flujo de recuperación de contraseña (email → reset link → nueva contraseña)
-- [ ] Server Action `createProfile` que inicializa `profiles`, `app_settings` y `user_preferences` en el primer login
+- [x] Server Action `createProfile` que inicializa `profiles`, `app_settings` y `user_preferences` en el primer login
 - [ ] Página de Perfil (`/settings/profile`): editar nombre, avatar (Supabase Storage), moneda base
 - [ ] Página de Preferencias (`/settings/preferences`): tema (dark/light), idioma, formato de fecha
-- [ ] Seed de categorías por defecto al crear cuenta (Supermercados, Combustible, Suscripciones, etc.)
+- [x] Seed de categorías por defecto al crear cuenta (Supermercados, Combustible, Suscripciones, etc.)
 
 ---
 

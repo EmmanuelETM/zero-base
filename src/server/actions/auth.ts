@@ -97,7 +97,9 @@ export async function forgotPasswordAction(
   const { error } = await supabase.auth.resetPasswordForEmail(
     parsed.data.email,
     {
-      redirectTo: `${env.NEXT_PUBLIC_SITE_URL}/reset-password`,
+      // The callback route exchanges the PKCE code for a session and then
+      // redirects the user to /reset-password.
+      redirectTo: `${env.NEXT_PUBLIC_SITE_URL}/api/auth/callback?next=/reset-password`,
     },
   );
 
@@ -128,6 +130,21 @@ export async function resetPasswordAction(
   }
 
   const supabase = await createServerClient();
+
+  // Verify there is an active session before attempting the update.
+  // Without a session (obtained by exchangeCodeForSession in the callback
+  // route) this call would fail with an auth error.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      error:
+        "El enlace ha expirado o ya fue utilizado. Solicita un nuevo correo de recuperación.",
+    };
+  }
+
   const { error } = await supabase.auth.updateUser({
     password: parsed.data.password,
   });
@@ -135,6 +152,10 @@ export async function resetPasswordAction(
   if (error) {
     return { error: error.message };
   }
+
+  // Sign out to invalidate the recovery session. The user must log in
+  // again with their new credentials.
+  await supabase.auth.signOut();
 
   redirect("/login?reset=success");
 }

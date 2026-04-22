@@ -34,21 +34,27 @@ export default async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAuthRoute =
+  // Routes that are only accessible to unauthenticated users.
+  const publicOnlyRoutes =
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/register") ||
-    request.nextUrl.pathname.startsWith("/forgot-password") ||
-    request.nextUrl.pathname.startsWith("/reset-password");
+    request.nextUrl.pathname.startsWith("/forgot-password");
 
-  if (!user && !isAuthRoute) {
-    // Protect routes
+  // Routes that are accessible to everyone (auth not required, but
+  // authenticated users are also allowed — e.g. during the password-reset flow
+  // where Supabase creates a session via the PKCE callback before the user
+  // lands on this page).
+  const openRoutes = request.nextUrl.pathname.startsWith("/reset-password");
+
+  if (!user && !publicOnlyRoutes && !openRoutes) {
+    // Protect private routes: redirect unauthenticated users to login.
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthRoute) {
-    // Redirect if logged in
+  if (user && publicOnlyRoutes) {
+    // Authenticated users shouldn't see login/register/forgot-password.
     const url = request.nextUrl.clone();
     url.pathname = "/accounts";
     return NextResponse.redirect(url);
