@@ -1,5 +1,5 @@
 {
-  "id": "753a1ec7-74cb-4c63-bfbf-2c003eb865c2",
+  "id": "745c7f91-8e89-4041-a33f-4a71b094b626",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -48,6 +48,13 @@
           "notNull": true,
           "default": false
         },
+        "is_archived": {
+          "name": "is_archived",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "color": {
           "name": "color",
           "type": "text",
@@ -59,6 +66,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
@@ -86,10 +100,10 @@
         }
       },
       "foreignKeys": {
-        "accounts_user_id_profiles_id_fk": {
-          "name": "accounts_user_id_profiles_id_fk",
+        "accounts_user_id_users_id_fk": {
+          "name": "accounts_user_id_users_id_fk",
           "tableFrom": "accounts",
-          "tableTo": "profiles",
+          "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -98,9 +112,18 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Usuarios gestionan sus cuentas": {
+          "name": "Usuarios gestionan sus cuentas",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"accounts\".\"user_id\"",
+          "withCheck": "auth.uid() = \"accounts\".\"user_id\""
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.app_settings": {
       "name": "app_settings",
@@ -124,6 +147,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp",
@@ -136,9 +166,17 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Cualquier usuario autenticado puede leer settings": {
+          "name": "Cualquier usuario autenticado puede leer settings",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "true"
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.audit_log": {
       "name": "audit_log",
@@ -256,10 +294,10 @@
         }
       },
       "foreignKeys": {
-        "audit_log_user_id_profiles_id_fk": {
-          "name": "audit_log_user_id_profiles_id_fk",
+        "audit_log_user_id_users_id_fk": {
+          "name": "audit_log_user_id_users_id_fk",
           "tableFrom": "audit_log",
-          "tableTo": "profiles",
+          "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
@@ -268,9 +306,17 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Usuarios ven sus propios logs de auditoría": {
+          "name": "Usuarios ven sus propios logs de auditoría",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"audit_log\".\"user_id\""
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.automation_rules": {
       "name": "automation_rules",
@@ -386,10 +432,10 @@
         }
       },
       "foreignKeys": {
-        "automation_rules_user_id_profiles_id_fk": {
-          "name": "automation_rules_user_id_profiles_id_fk",
+        "automation_rules_user_id_users_id_fk": {
+          "name": "automation_rules_user_id_users_id_fk",
           "tableFrom": "automation_rules",
-          "tableTo": "profiles",
+          "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -425,9 +471,142 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Usuarios gestionan sus reglas de automatización": {
+          "name": "Usuarios gestionan sus reglas de automatización",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"automation_rules\".\"user_id\"",
+          "withCheck": "auth.uid() = \"automation_rules\".\"user_id\""
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
+    },
+    "public.budget_allocations": {
+      "name": "budget_allocations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "budget_period_id": {
+          "name": "budget_period_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category_id": {
+          "name": "category_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "allocated_amount": {
+          "name": "allocated_amount",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "spent_amount": {
+          "name": "spent_amount",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0.00'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_budget_allocations_period_category": {
+          "name": "idx_budget_allocations_period_category",
+          "columns": [
+            {
+              "expression": "budget_period_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "category_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "budget_allocations_user_id_users_id_fk": {
+          "name": "budget_allocations_user_id_users_id_fk",
+          "tableFrom": "budget_allocations",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "budget_allocations_budget_period_id_budget_periods_id_fk": {
+          "name": "budget_allocations_budget_period_id_budget_periods_id_fk",
+          "tableFrom": "budget_allocations",
+          "tableTo": "budget_periods",
+          "columnsFrom": ["budget_period_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "budget_allocations_category_id_categories_id_fk": {
+          "name": "budget_allocations_category_id_categories_id_fk",
+          "tableFrom": "budget_allocations",
+          "tableTo": "categories",
+          "columnsFrom": ["category_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "Usuarios gestionan sus asignaciones": {
+          "name": "Usuarios gestionan sus asignaciones",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"budget_allocations\".\"user_id\"",
+          "withCheck": "auth.uid() = \"budget_allocations\".\"user_id\""
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
     },
     "public.budget_goals": {
       "name": "budget_goals",
@@ -535,10 +714,10 @@
         }
       },
       "foreignKeys": {
-        "budget_goals_user_id_profiles_id_fk": {
-          "name": "budget_goals_user_id_profiles_id_fk",
+        "budget_goals_user_id_users_id_fk": {
+          "name": "budget_goals_user_id_users_id_fk",
           "tableFrom": "budget_goals",
-          "tableTo": "profiles",
+          "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -565,12 +744,30 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "policies": {
+        "Usuarios gestionan sus metas financieras": {
+          "name": "Usuarios gestionan sus metas financieras",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"budget_goals\".\"user_id\"",
+          "withCheck": "auth.uid() = \"budget_goals\".\"user_id\""
+        }
+      },
+      "checkConstraints": {
+        "target_amount_positive": {
+          "name": "target_amount_positive",
+          "value": "\"budget_goals\".\"target_amount\" > 0"
+        },
+        "exclusive_link": {
+          "name": "exclusive_link",
+          "value": "(\"budget_goals\".\"linked_account_id\" IS NULL OR \"budget_goals\".\"linked_card_id\" IS NULL)"
+        }
+      },
+      "isRLSEnabled": true
     },
-    "public.budgets": {
-      "name": "budgets",
+    "public.budget_periods": {
+      "name": "budget_periods",
       "schema": "",
       "columns": {
         "id": {
@@ -586,12 +783,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "category_id": {
-          "name": "category_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "period": {
           "name": "period",
           "type": "text",
@@ -600,19 +791,6 @@
         },
         "total_income": {
           "name": "total_income",
-          "type": "numeric(12, 2)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'0.00'"
-        },
-        "allocated_amount": {
-          "name": "allocated_amount",
-          "type": "numeric(12, 2)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "spent_amount": {
-          "name": "spent_amount",
           "type": "numeric(12, 2)",
           "primaryKey": false,
           "notNull": true,
@@ -642,17 +820,11 @@
         }
       },
       "indexes": {
-        "idx_budgets_user_category_period": {
-          "name": "idx_budgets_user_category_period",
+        "idx_budget_periods_user_period": {
+          "name": "idx_budget_periods_user_period",
           "columns": [
             {
               "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "category_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -671,30 +843,30 @@
         }
       },
       "foreignKeys": {
-        "budgets_user_id_profiles_id_fk": {
-          "name": "budgets_user_id_profiles_id_fk",
-          "tableFrom": "budgets",
-          "tableTo": "profiles",
+        "budget_periods_user_id_users_id_fk": {
+          "name": "budget_periods_user_id_users_id_fk",
+          "tableFrom": "budget_periods",
+          "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "budgets_category_id_categories_id_fk": {
-          "name": "budgets_category_id_categories_id_fk",
-          "tableFrom": "budgets",
-          "tableTo": "categories",
-          "columnsFrom": ["category_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Usuarios gestionan sus periodos de presupuesto": {
+          "name": "Usuarios gestionan sus periodos de presupuesto",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"budget_periods\".\"user_id\"",
+          "withCheck": "auth.uid() = \"budget_periods\".\"user_id\""
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.card_statements": {
       "name": "card_statements",
@@ -762,6 +934,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
@@ -800,9 +979,23 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "policies": {
+        "Usuarios gestionan los cortes de sus tarjetas": {
+          "name": "Usuarios gestionan los cortes de sus tarjetas",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "auth.uid() = (SELECT user_id FROM credit_cards WHERE id = \"card_statements\".\"card_id\")",
+          "withCheck": "auth.uid() = (SELECT user_id FROM credit_cards WHERE id = \"card_statements\".\"card_id\")"
+        }
+      },
+      "checkConstraints": {
+        "due_date_after_cut_date": {
+          "name": "due_date_after_cut_date",
+          "value": "\"card_statements\".\"due_date\" > \"card_statements\".\"cut_date\""
+        }
+      },
+      "isRLSEnabled": true
     },
     "public.categories": {
       "name": "categories",
@@ -848,6 +1041,13 @@
           "notNull": true,
           "default": false
         },
+        "is_system": {
+          "name": "is_system",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "color": {
           "name": "color",
           "type": "text",
@@ -859,6 +1059,20 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
@@ -879,10 +1093,10 @@
         }
       },
       "foreignKeys": {
-        "categories_user_id_profiles_id_fk": {
-          "name": "categories_user_id_profiles_id_fk",
+        "categories_user_id_users_id_fk": {
+          "name": "categories_user_id_users_id_fk",
           "tableFrom": "categories",
-          "tableTo": "profiles",
+          "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -891,9 +1105,25 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Lectura de categorías: Sistema + Propias": {
+          "name": "Lectura de categorías: Sistema + Propias",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "\"categories\".\"is_system\" = true OR auth.uid() = \"categories\".\"user_id\""
+        },
+        "Usuarios modifican solo sus categorías personalizadas": {
+          "name": "Usuarios modifican solo sus categorías personalizadas",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "\"categories\".\"is_system\" = false AND auth.uid() = \"categories\".\"user_id\"",
+          "withCheck": "\"categories\".\"is_system\" = false AND auth.uid() = \"categories\".\"user_id\""
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.credit_cards": {
       "name": "credit_cards",
@@ -961,6 +1191,20 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
@@ -981,10 +1225,10 @@
         }
       },
       "foreignKeys": {
-        "credit_cards_user_id_profiles_id_fk": {
-          "name": "credit_cards_user_id_profiles_id_fk",
+        "credit_cards_user_id_users_id_fk": {
+          "name": "credit_cards_user_id_users_id_fk",
           "tableFrom": "credit_cards",
-          "tableTo": "profiles",
+          "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -993,7 +1237,16 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Usuarios gestionan sus tarjetas": {
+          "name": "Usuarios gestionan sus tarjetas",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"credit_cards\".\"user_id\"",
+          "withCheck": "auth.uid() = \"credit_cards\".\"user_id\""
+        }
+      },
       "checkConstraints": {
         "cut_day_valid": {
           "name": "cut_day_valid",
@@ -1004,7 +1257,7 @@
           "value": "\"credit_cards\".\"payment_day\" BETWEEN 1 AND 28"
         }
       },
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.net_worth_snapshots": {
       "name": "net_worth_snapshots",
@@ -1071,6 +1324,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
@@ -1097,10 +1357,10 @@
         }
       },
       "foreignKeys": {
-        "net_worth_snapshots_user_id_profiles_id_fk": {
-          "name": "net_worth_snapshots_user_id_profiles_id_fk",
+        "net_worth_snapshots_user_id_users_id_fk": {
+          "name": "net_worth_snapshots_user_id_users_id_fk",
           "tableFrom": "net_worth_snapshots",
-          "tableTo": "profiles",
+          "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -1109,9 +1369,18 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Usuarios ven y administran sus snapshots": {
+          "name": "Usuarios ven y administran sus snapshots",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"net_worth_snapshots\".\"user_id\"",
+          "withCheck": "auth.uid() = \"net_worth_snapshots\".\"user_id\""
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.notifications": {
       "name": "notifications",
@@ -1175,6 +1444,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
@@ -1192,6 +1468,12 @@
               "isExpression": false,
               "asc": true,
               "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
             }
           ],
           "isUnique": false,
@@ -1201,10 +1483,10 @@
         }
       },
       "foreignKeys": {
-        "notifications_user_id_profiles_id_fk": {
-          "name": "notifications_user_id_profiles_id_fk",
+        "notifications_user_id_users_id_fk": {
+          "name": "notifications_user_id_users_id_fk",
           "tableFrom": "notifications",
-          "tableTo": "profiles",
+          "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -1213,32 +1495,47 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Usuarios gestionan sus notificaciones": {
+          "name": "Usuarios gestionan sus notificaciones",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"notifications\".\"user_id\"",
+          "withCheck": "auth.uid() = \"notifications\".\"user_id\""
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
-    "public.profiles": {
-      "name": "profiles",
+    "public.permissions": {
+      "name": "permissions",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
-          "notNull": true
-        },
-        "full_name": {
-          "name": "full_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "currency": {
-          "name": "currency",
-          "type": "text",
-          "primaryKey": false,
           "notNull": true,
-          "default": "'DOP'"
+          "default": "gen_random_uuid()"
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resource": {
+          "name": "resource",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -1246,15 +1543,52 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_action_resource": {
+          "name": "idx_action_resource",
+          "columns": [
+            {
+              "expression": "action",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "resource",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Lectura de permisos para usuarios autenticados": {
+          "name": "Lectura de permisos para usuarios autenticados",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "true"
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.recurring_transactions": {
       "name": "recurring_transactions",
@@ -1388,10 +1722,10 @@
         }
       },
       "foreignKeys": {
-        "recurring_transactions_user_id_profiles_id_fk": {
-          "name": "recurring_transactions_user_id_profiles_id_fk",
+        "recurring_transactions_user_id_users_id_fk": {
+          "name": "recurring_transactions_user_id_users_id_fk",
           "tableFrom": "recurring_transactions",
-          "tableTo": "profiles",
+          "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -1427,9 +1761,162 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Usuarios gestionan sus transacciones recurrentes": {
+          "name": "Usuarios gestionan sus transacciones recurrentes",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"recurring_transactions\".\"user_id\"",
+          "withCheck": "auth.uid() = \"recurring_transactions\".\"user_id\""
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
+    },
+    "public.role_permissions": {
+      "name": "role_permissions",
+      "schema": "",
+      "columns": {
+        "role_id": {
+          "name": "role_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "permission_id": {
+          "name": "permission_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "role_permissions_role_id_roles_id_fk": {
+          "name": "role_permissions_role_id_roles_id_fk",
+          "tableFrom": "role_permissions",
+          "tableTo": "roles",
+          "columnsFrom": ["role_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "role_permissions_permission_id_permissions_id_fk": {
+          "name": "role_permissions_permission_id_permissions_id_fk",
+          "tableFrom": "role_permissions",
+          "tableTo": "permissions",
+          "columnsFrom": ["permission_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "role_permissions_role_id_permission_id_pk": {
+          "name": "role_permissions_role_id_permission_id_pk",
+          "columns": ["role_id", "permission_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "Lectura de mapa de permisos": {
+          "name": "Lectura de mapa de permisos",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.roles": {
+      "name": "roles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_system": {
+          "name": "is_system",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "roles_slug_unique": {
+          "name": "roles_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": ["slug"]
+        }
+      },
+      "policies": {
+        "Lectura de roles para usuarios autenticados": {
+          "name": "Lectura de roles para usuarios autenticados",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
     },
     "public.tags": {
       "name": "tags",
@@ -1459,6 +1946,20 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
@@ -1485,10 +1986,10 @@
         }
       },
       "foreignKeys": {
-        "tags_user_id_profiles_id_fk": {
-          "name": "tags_user_id_profiles_id_fk",
+        "tags_user_id_users_id_fk": {
+          "name": "tags_user_id_users_id_fk",
           "tableFrom": "tags",
-          "tableTo": "profiles",
+          "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -1497,14 +1998,29 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Usuarios gestionan sus tags": {
+          "name": "Usuarios gestionan sus tags",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"tags\".\"user_id\"",
+          "withCheck": "auth.uid() = \"tags\".\"user_id\""
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.transaction_tags": {
       "name": "transaction_tags",
       "schema": "",
       "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "transaction_id": {
           "name": "transaction_id",
           "type": "uuid",
@@ -1516,30 +2032,23 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
-        "idx_transaction_tags_pk": {
-          "name": "idx_transaction_tags_pk",
-          "columns": [
-            {
-              "expression": "transaction_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "tag_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "idx_transaction_tags_tag": {
           "name": "idx_transaction_tags_tag",
           "columns": [
@@ -1557,6 +2066,15 @@
         }
       },
       "foreignKeys": {
+        "transaction_tags_user_id_users_id_fk": {
+          "name": "transaction_tags_user_id_users_id_fk",
+          "tableFrom": "transaction_tags",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "transaction_tags_transaction_id_transactions_id_fk": {
           "name": "transaction_tags_transaction_id_transactions_id_fk",
           "tableFrom": "transaction_tags",
@@ -1576,11 +2094,25 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "transaction_tags_transaction_id_tag_id_pk": {
+          "name": "transaction_tags_transaction_id_tag_id_pk",
+          "columns": ["transaction_id", "tag_id"]
+        }
+      },
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Usuarios gestionan los tags de sus transacciones": {
+          "name": "Usuarios gestionan los tags de sus transacciones",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"transaction_tags\".\"user_id\"",
+          "withCheck": "auth.uid() = \"transaction_tags\".\"user_id\""
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.transactions": {
       "name": "transactions",
@@ -1611,6 +2143,25 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'0.00'"
+        },
+        "original_currency": {
+          "name": "original_currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'DOP'"
+        },
+        "original_amount": {
+          "name": "original_amount",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "exchange_rate": {
+          "name": "exchange_rate",
+          "type": "numeric(10, 4)",
+          "primaryKey": false,
+          "notNull": false
         },
         "type": {
           "name": "type",
@@ -1695,6 +2246,13 @@
         },
         "created_at": {
           "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -1785,10 +2343,10 @@
         }
       },
       "foreignKeys": {
-        "transactions_user_id_profiles_id_fk": {
-          "name": "transactions_user_id_profiles_id_fk",
+        "transactions_user_id_users_id_fk": {
+          "name": "transactions_user_id_users_id_fk",
           "tableFrom": "transactions",
-          "tableTo": "profiles",
+          "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -1803,10 +2361,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "transactions_budget_id_budgets_id_fk": {
-          "name": "transactions_budget_id_budgets_id_fk",
+        "transactions_budget_id_budget_periods_id_fk": {
+          "name": "transactions_budget_id_budget_periods_id_fk",
           "tableFrom": "transactions",
-          "tableTo": "budgets",
+          "tableTo": "budget_periods",
           "columnsFrom": ["budget_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
@@ -1860,14 +2418,27 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Usuarios gestionan sus transacciones": {
+          "name": "Usuarios gestionan sus transacciones",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"transactions\".\"user_id\"",
+          "withCheck": "auth.uid() = \"transactions\".\"user_id\""
+        }
+      },
       "checkConstraints": {
         "amount_positive": {
           "name": "amount_positive",
           "value": "\"transactions\".\"amount\" > 0"
+        },
+        "valid_transaction_source_dest": {
+          "name": "valid_transaction_source_dest",
+          "value": "\n      (\"transactions\".\"type\" = 'income' AND \"transactions\".\"account_id\" IS NOT NULL) OR\n      (\"transactions\".\"type\" = 'expense' AND (\"transactions\".\"account_id\" IS NOT NULL OR \"transactions\".\"card_id\" IS NOT NULL)) OR\n      (\"transactions\".\"type\" = 'transfer' AND \"transactions\".\"account_id\" IS NOT NULL AND \"transactions\".\"destination_account_id\" IS NOT NULL) OR\n      (\"transactions\".\"type\" = 'card_payment' AND \"transactions\".\"account_id\" IS NOT NULL AND \"transactions\".\"card_id\" IS NOT NULL)\n    "
         }
       },
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.user_preferences": {
       "name": "user_preferences",
@@ -1919,6 +2490,13 @@
           "notNull": false,
           "default": "'5000.00'"
         },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp",
@@ -1929,10 +2507,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "user_preferences_user_id_profiles_id_fk": {
-          "name": "user_preferences_user_id_profiles_id_fk",
+        "user_preferences_user_id_users_id_fk": {
+          "name": "user_preferences_user_id_users_id_fk",
           "tableFrom": "user_preferences",
-          "tableTo": "profiles",
+          "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
@@ -1941,9 +2519,176 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Usuarios ven sus preferencias": {
+          "name": "Usuarios ven sus preferencias",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"user_preferences\".\"user_id\""
+        },
+        "Usuarios modifican sus preferencias": {
+          "name": "Usuarios modifican sus preferencias",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"user_preferences\".\"user_id\"",
+          "withCheck": "auth.uid() = \"user_preferences\".\"user_id\""
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
+    },
+    "public.user_roles": {
+      "name": "user_roles",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role_id": {
+          "name": "role_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_roles_user_id_users_id_fk": {
+          "name": "user_roles_user_id_users_id_fk",
+          "tableFrom": "user_roles",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "user_roles_role_id_roles_id_fk": {
+          "name": "user_roles_role_id_roles_id_fk",
+          "tableFrom": "user_roles",
+          "tableTo": "roles",
+          "columnsFrom": ["role_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "user_roles_user_id_role_id_pk": {
+          "name": "user_roles_user_id_role_id_pk",
+          "columns": ["user_id", "role_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "Usuarios ven sus propios roles": {
+          "name": "Usuarios ven sus propios roles",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"user_roles\".\"user_id\""
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "full_name": {
+          "name": "full_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "avatar_url": {
+          "name": "avatar_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'DOP'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "nullsNotDistinct": false,
+          "columns": ["email"]
+        }
+      },
+      "policies": {
+        "Usuarios ven su propio perfil": {
+          "name": "Usuarios ven su propio perfil",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"users\".\"id\""
+        },
+        "Usuarios modifican su propio perfil": {
+          "name": "Usuarios modifican su propio perfil",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"users\".\"id\"",
+          "withCheck": "auth.uid() = \"users\".\"id\""
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
     },
     "public.webhook_events": {
       "name": "webhook_events",
@@ -1955,6 +2700,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "source": {
           "name": "source",
@@ -2039,6 +2790,21 @@
           "method": "btree",
           "with": {}
         },
+        "idx_webhook_events_user": {
+          "name": "idx_webhook_events_user",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "idx_webhook_events_idempotency": {
           "name": "idx_webhook_events_idempotency",
           "columns": [
@@ -2056,6 +2822,15 @@
         }
       },
       "foreignKeys": {
+        "webhook_events_user_id_users_id_fk": {
+          "name": "webhook_events_user_id_users_id_fk",
+          "tableFrom": "webhook_events",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "webhook_events_matched_rule_id_automation_rules_id_fk": {
           "name": "webhook_events_matched_rule_id_automation_rules_id_fk",
           "tableFrom": "webhook_events",
@@ -2068,9 +2843,17 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "Usuarios ven sus propios eventos de webhook": {
+          "name": "Usuarios ven sus propios eventos de webhook",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "auth.uid() = \"webhook_events\".\"user_id\""
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     }
   },
   "enums": {

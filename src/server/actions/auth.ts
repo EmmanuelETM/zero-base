@@ -49,11 +49,16 @@ export async function registerAction(
     fullName: formData.get("fullName"),
     email: formData.get("email"),
     password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
   };
 
   const parsed = RegisterSchema.safeParse(raw);
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  if (parsed.data.password !== parsed.data.confirmPassword) {
+    return { error: "Las contraseñas no coinciden." };
   }
 
   const supabase = await createServerClient();

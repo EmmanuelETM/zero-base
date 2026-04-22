@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1776743547570,
-      "tag": "0000_oval_richard_fisk",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1776744022330,
-      "tag": "0001_absurd_hellfire_club",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1776748663088,
-      "tag": "0002_nebulous_bloodaxe",
+      "when": 1776828185227,
+      "tag": "0000_jazzy_mole_man",
       "breakpoints": true
     }
   ]

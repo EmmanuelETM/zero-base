@@ -179,9 +179,9 @@ export function RegisterForm({
                       className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
                     >
                       {showPassword ? (
-                        <EyeClosedIcon className="size-5" />
-                      ) : (
                         <EyeIcon className="size-5" />
+                      ) : (
+                        <EyeClosedIcon className="size-5" />
                       )}
                     </button>
                   </div>
@@ -207,9 +207,9 @@ export function RegisterForm({
                       className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
                     >
                       {showPassword ? (
-                        <EyeClosedIcon className="size-5" />
-                      ) : (
                         <EyeIcon className="size-5" />
+                      ) : (
+                        <EyeClosedIcon className="size-5" />
                       )}
                     </button>
                   </div>
