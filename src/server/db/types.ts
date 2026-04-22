@@ -8,8 +8,8 @@ import {
 import {
   transactions,
   accounts,
-  profiles,
-  budgets,
+  users,
+  budgetPeriods,
   appSettings,
   userPreferences,
   creditCards,
@@ -30,10 +30,10 @@ import {
 // 1. ZOD SCHEMAS (Validadores para API y Formularios)
 // ============================================================
 
-// --- Profiles ---
-export const selectProfileSchema = createSelectSchema(profiles);
-export const insertProfileSchema = createInsertSchema(profiles);
-export const updateProfileSchema = createUpdateSchema(profiles);
+// --- Users ---
+export const selectUserSchema = createSelectSchema(users);
+export const insertUserSchema = createInsertSchema(users);
+export const updateUserSchema = createUpdateSchema(users);
 
 // --- Accounts ---
 export const selectAccountSchema = createSelectSchema(accounts);
@@ -59,10 +59,10 @@ export const insertTransactionSchema = createInsertSchema(transactions, {
 });
 export const updateTransactionSchema = createUpdateSchema(transactions);
 
-// --- Budgets ---
-export const selectBudgetSchema = createSelectSchema(budgets);
-export const insertBudgetSchema = createInsertSchema(budgets);
-export const updateBudgetSchema = createUpdateSchema(budgets);
+// --- Budget Periods ---
+export const selectBudgetPeriodSchema = createSelectSchema(budgetPeriods);
+export const insertBudgetPeriodSchema = createInsertSchema(budgetPeriods);
+export const updateBudgetPeriodSchema = createUpdateSchema(budgetPeriods);
 
 // --- App Settings & User Preferences ---
 export const selectAppSettingsSchema = createSelectSchema(appSettings);
@@ -142,10 +142,10 @@ export const updateBudgetGoalSchema = createUpdateSchema(budgetGoals);
 // ============================================================
 
 // --- Select Models (Lectura) ---
-export type Profile = z.infer<typeof selectProfileSchema>;
+export type User = z.infer<typeof selectUserSchema>;
 export type Account = z.infer<typeof selectAccountSchema>;
 export type Transaction = z.infer<typeof selectTransactionSchema>;
-export type Budget = z.infer<typeof selectBudgetSchema>;
+export type BudgetPeriod = z.infer<typeof selectBudgetPeriodSchema>;
 export type AppSettings = z.infer<typeof selectAppSettingsSchema>;
 export type UserPreferences = z.infer<typeof selectUserPreferencesSchema>;
 export type CreditCard = z.infer<typeof selectCreditCardSchema>;
@@ -164,10 +164,10 @@ export type NetWorthSnapshot = z.infer<typeof selectNetWorthSnapshotSchema>;
 export type BudgetGoal = z.infer<typeof selectBudgetGoalSchema>;
 
 // --- Insert Models (Escritura/Creación) ---
-export type NewProfile = z.infer<typeof insertProfileSchema>;
+export type NewUser = z.infer<typeof insertUserSchema>;
 export type NewAccount = z.infer<typeof insertAccountSchema>;
 export type NewTransaction = z.infer<typeof insertTransactionSchema>;
-export type NewBudget = z.infer<typeof insertBudgetSchema>;
+export type NewBudgetPeriod = z.infer<typeof insertBudgetPeriodSchema>;
 export type NewAppSettings = z.infer<typeof insertAppSettingsSchema>;
 export type NewUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
 export type NewCreditCard = z.infer<typeof insertCreditCardSchema>;

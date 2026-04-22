@@ -3,8 +3,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/env";
 
 export default async function proxy(request: NextRequest) {
+  // Inject the current pathname so Server Components can read it via headers().
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+
   let supabaseResponse = NextResponse.next({
-    request,
+    request: { headers: requestHeaders },
   });
 
   const supabase = createServerClient(
@@ -19,8 +23,9 @@ export default async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
+          // Rebuild the response but keep the enriched request headers.
           supabaseResponse = NextResponse.next({
-            request,
+            request: { headers: requestHeaders },
           });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
