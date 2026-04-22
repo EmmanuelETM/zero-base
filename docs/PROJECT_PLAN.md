@@ -46,25 +46,25 @@ src/
 - [x] Implementar `middleware.ts` que refresca el session cookie en cada request
 - [x] Crear páginas de auth: Login, Register, Forgot Password, Reset Password
 - [x] Proteger el layout `(dashboard)` verificando sesión en el Server Component raíz
-- [-] Vincular `auth.users` de Supabase con la tabla `users` al momento del registro (trigger o Server Action)
+- [x] Vincular `auth.users` de Supabase con la tabla `users` al momento del registro (trigger o Server Action)
 - [x] Configurar variables de entorno: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL`
 
 ### 0.3 Base de Datos & ORM
 
-- [ ] Confirmar que el schema de Drizzle está completo y sincronizado con Supabase (todas las tablas de los types)
-- [ ] Configurar `drizzle.config.ts` apuntando al `DATABASE_URL`
-- [ ] Crear script de seed con datos iniciales (categorías por defecto, configuraciones de app)
-- [ ] Habilitar Row Level Security (RLS) en Supabase para todas las tablas sensibles
-- [ ] Crear políticas RLS: `user_id = auth.uid()` en todas las tablas de usuario
-- [ ] Centralizar el cliente Drizzle en `lib/db/index.ts` (singleton, no instanciar por request)
+- [x] Confirmar que el schema de Drizzle está completo y sincronizado con Supabase (todas las tablas de los types)
+- [x] Configurar `drizzle.config.ts` apuntando al `DATABASE_URL`
+- [x] Crear script de seed con datos iniciales (categorías por defecto, configuraciones de app)
+- [x] Habilitar Row Level Security (RLS) en Supabase para todas las tablas sensibles
+- [x] Crear políticas RLS: `user_id = auth.uid()` en todas las tablas de usuario
+- [x] Centralizar el cliente Drizzle en `lib/db/index.ts` (singleton, no instanciar por request)
 
 ### 0.4 Infraestructura de Calidad
 
-- [ ] Configurar ESLint con `eslint-config-next`
-- [ ] Agregar `prettier` + `prettier-plugin-tailwindcss` para ordenar clases
-- [ ] Configurar `husky` + `lint-staged` para pre-commit hooks
-- [ ] Definir convención de commits (Conventional Commits)
-- [ ] Agregar validación de variables de entorno con Zod al arrancar (ej. `@t3-oss/env-nextjs`)
+- [x] Configurar ESLint con `eslint-config-next`
+- [x] Agregar `prettier` + `prettier-plugin-tailwindcss` para ordenar clases
+- [x] Configurar `husky` + `lint-staged` para pre-commit hooks
+- [x] Definir convención de commits (Conventional Commits)
+- [x] Agregar validación de variables de entorno con Zod al arrancar (ej. `@t3-oss/env-nextjs`)
 
 ---
 

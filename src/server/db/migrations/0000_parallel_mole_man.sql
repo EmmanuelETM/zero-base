@@ -1,11 +1,11 @@
-CREATE TYPE "public"."account_type" AS ENUM('checking', 'savings', 'investment', 'cooperative');--> statement-breakpoint
+CREATE TYPE "public"."account_type" AS ENUM('checking', 'savings', 'investment', 'cooperative', 'cash');--> statement-breakpoint
 CREATE TYPE "public"."audit_action" AS ENUM('insert', 'update', 'delete');--> statement-breakpoint
 CREATE TYPE "public"."automation_rule_field" AS ENUM('description', 'merchant', 'amount');--> statement-breakpoint
 CREATE TYPE "public"."automation_rule_operator" AS ENUM('contains', 'equals', 'starts_with', 'greater_than', 'less_than');--> statement-breakpoint
 CREATE TYPE "public"."budget_status" AS ENUM('draft', 'balanced', 'closed');--> statement-breakpoint
-CREATE TYPE "public"."category_type" AS ENUM('income', 'fixed_expense', 'variable_expense', 'transfer');--> statement-breakpoint
+CREATE TYPE "public"."category_type" AS ENUM('income', 'expense', 'transfer');--> statement-breakpoint
 CREATE TYPE "public"."notification_type" AS ENUM('info', 'alert', 'reminder', 'system');--> statement-breakpoint
-CREATE TYPE "public"."recurrence_frequency" AS ENUM('daily', 'weekly', 'biweekly', 'monthly', 'yearly');--> statement-breakpoint
+CREATE TYPE "public"."recurrence_frequency" AS ENUM('daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'yearly');--> statement-breakpoint
 CREATE TYPE "public"."transaction_type" AS ENUM('income', 'expense', 'transfer', 'card_payment');--> statement-breakpoint
 CREATE TYPE "public"."webhook_status" AS ENUM('pending', 'processed', 'failed', 'ignored');--> statement-breakpoint
 CREATE TABLE "accounts" (

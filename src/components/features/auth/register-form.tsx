@@ -168,7 +168,7 @@ export function RegisterForm({
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Mín. 8 caracteres"
+                      placeholder="********"
                       autoComplete="new-password"
                       className="bg-background/50 h-11 p-4"
                       {...register("password")}
@@ -189,14 +189,12 @@ export function RegisterForm({
                 </Field>
 
                 <Field data-invalid={!!errors.confirmPassword}>
-                  <FieldLabel htmlFor="confirm-password">
-                    Confirmar contraseña
-                  </FieldLabel>
+                  <FieldLabel htmlFor="confirm-password">Confirmar</FieldLabel>
                   <div className="relative">
                     <Input
                       id="confirm-password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Mín. 8 caracteres"
+                      placeholder="********"
                       autoComplete="new-password"
                       className="bg-background/50 h-11 p-4"
                       {...register("confirmPassword")}

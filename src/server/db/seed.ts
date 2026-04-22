@@ -1,36 +1,47 @@
-import { db } from "./index"; // Ajusta la ruta si tu instancia de Drizzle está en otro lado
+import { db } from "./index";
 import { roles, permissions, rolePermissions, categories } from "./schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 async function main() {
-  console.log("🌱 Iniciando el proceso de Seed para RBAC...");
+  console.log("🌱 Iniciando el proceso de Seed de la Base de Datos...");
 
-  // 1. Definir los Roles Base
+  // =========================================================================
+  // 1. ROLES BASE
+  // =========================================================================
   const baseRoles = [
     {
       name: "Propietario",
       slug: "owner",
       description: "Control total del sistema",
+      isSystem: true,
     },
     {
       name: "Administrador",
       slug: "admin",
       description: "Control financiero total",
+      isSystem: true,
     },
     {
       name: "Colaborador",
       slug: "member",
       description: "Operador de transacciones",
+      isSystem: true,
     },
-    { name: "Auditor", slug: "viewer", description: "Acceso de solo lectura" },
+    {
+      name: "Auditor",
+      slug: "viewer",
+      description: "Acceso de solo lectura",
+      isSystem: true,
+    },
     {
       name: "Usuario Regular",
       slug: "user",
       description: "Rol por defecto al registrarse",
+      isSystem: true,
     },
   ];
 
-  console.log("⏳ Insertando Roles...");
+  console.log("⏳ [1/4] Insertando Roles...");
   for (const role of baseRoles) {
     await db
       .insert(roles)
@@ -38,7 +49,9 @@ async function main() {
       .onConflictDoNothing({ target: roles.slug });
   }
 
-  // 2. Definir los Permisos del Sistema
+  // =========================================================================
+  // 2. PERMISOS DEL SISTEMA
+  // =========================================================================
   const basePermissions = [
     {
       action: "manage",
@@ -82,7 +95,7 @@ async function main() {
     },
   ];
 
-  console.log("⏳ Insertando Permisos...");
+  console.log("⏳ [2/4] Insertando Permisos...");
   for (const perm of basePermissions) {
     await db
       .insert(permissions)
@@ -92,43 +105,39 @@ async function main() {
       });
   }
 
-  // 3. Recuperar los IDs generados por Postgres
+  // =========================================================================
+  // 3. VINCULACIÓN RBAC (Matriz de Permisos)
+  // =========================================================================
   const allRoles = await db.select().from(roles);
   const allPerms = await db.select().from(permissions);
 
-  // Helper para encontrar IDs rápido
   const getRoleId = (slug: string) => allRoles.find((r) => r.slug === slug)?.id;
   const getPermId = (action: string, resource: string) =>
     allPerms.find((p) => p.action === action && p.resource === resource)?.id;
 
-  // 4. Mapeo de Matriz de Permisos
-  const roleBindings: { roleSlug: string; action: string; resource: string }[] =
-    [
-      // Owner: Tiene absolutamente todo
-      ...basePermissions.map((p) => ({
-        roleSlug: "owner",
-        action: p.action,
-        resource: p.resource,
-      })),
+  const roleBindings = [
+    // Owner: Tiene absolutamente todo
+    ...basePermissions.map((p) => ({
+      roleSlug: "owner",
+      action: p.action,
+      resource: p.resource,
+    })),
+    // Admin
+    { roleSlug: "admin", action: "manage", resource: "accounts" },
+    { roleSlug: "admin", action: "manage", resource: "budgets" },
+    { roleSlug: "admin", action: "delete", resource: "transactions" },
+    { roleSlug: "admin", action: "create", resource: "transactions" },
+    { roleSlug: "admin", action: "update", resource: "transactions" },
+    { roleSlug: "admin", action: "read", resource: "reports" },
+    // Member
+    { roleSlug: "member", action: "create", resource: "transactions" },
+    { roleSlug: "member", action: "update", resource: "transactions" },
+    { roleSlug: "member", action: "read", resource: "reports" },
+    // Viewer
+    { roleSlug: "viewer", action: "read", resource: "reports" },
+  ];
 
-      // Admin: Todo lo financiero, nada de sistema
-      { roleSlug: "admin", action: "manage", resource: "accounts" },
-      { roleSlug: "admin", action: "manage", resource: "budgets" },
-      { roleSlug: "admin", action: "delete", resource: "transactions" },
-      { roleSlug: "admin", action: "create", resource: "transactions" },
-      { roleSlug: "admin", action: "update", resource: "transactions" },
-      { roleSlug: "admin", action: "read", resource: "reports" },
-
-      // Member: Solo operatividad diaria
-      { roleSlug: "member", action: "create", resource: "transactions" },
-      { roleSlug: "member", action: "update", resource: "transactions" },
-      { roleSlug: "member", action: "read", resource: "reports" },
-
-      // Viewer: Solo ver
-      { roleSlug: "viewer", action: "read", resource: "reports" },
-    ];
-
-  console.log("⏳ Vinculando Roles y Permisos...");
+  console.log("⏳ [3/4] Vinculando Matriz de Roles y Permisos...");
   for (const binding of roleBindings) {
     const roleId = getRoleId(binding.roleSlug);
     const permissionId = getPermId(binding.action, binding.resource);
@@ -143,74 +152,112 @@ async function main() {
     }
   }
 
-  console.log("✅ Seed completado con éxito. El motor RBAC está listo.");
+  // =========================================================================
+  // 4. CATEGORÍAS GLOBALES DEL SISTEMA
+  // =========================================================================
+  console.log("⏳ [4/4] Insertando Categorías del Sistema...");
 
-  // console.log("⏳ Insertando Categorías del Sistema...");
-  // const systemCategories = [
-  //   {
-  //     name: "Supermercados",
-  //     icon: "shopping-cart",
-  //     color: "#3b82f6",
-  //     isSystem: true,
-  //     type: "variable",
-  //   },
-  //   {
-  //     name: "Combustible",
-  //     icon: "gas-pump",
-  //     color: "#f59e0b",
-  //     isSystem: true,
-  //     type: "variable",
-  //   },
-  //   {
-  //     name: "Suscripciones",
-  //     icon: "repeat",
-  //     color: "#8b5cf6",
-  //     isSystem: true,
-  //     type: "fijo",
-  //   },
-  //   {
-  //     name: "Servicios Básicos",
-  //     icon: "lightning",
-  //     color: "#eab308",
-  //     isSystem: true,
-  //     type: "fijo",
-  //   },
-  //   {
-  //     name: "Entretenimiento",
-  //     icon: "popcorn",
-  //     color: "#ec4899",
-  //     isSystem: true,
-  //     type: "variable",
-  //   },
-  //   {
-  //     name: "Ahorros LP",
-  //     icon: "piggy-bank",
-  //     color: "#10b981",
-  //     isSystem: true,
-  //     type: "ahorro",
-  //   },
-  // ];
+  // Usamos as const para inferir los tipos exactos requeridos por tu schema
+  const systemCategories = [
+    {
+      name: "Salario / Nómina",
+      icon: "money",
+      color: "#10b981",
+      isSystem: true,
+      type: "income",
+      isFixed: true,
+      isFeeCategory: false,
+    },
+    {
+      name: "Supermercados",
+      icon: "shopping-cart",
+      color: "#3b82f6",
+      isSystem: true,
+      type: "expense",
+      isFixed: false,
+      isFeeCategory: false,
+    },
+    {
+      name: "Combustible",
+      icon: "gas-pump",
+      color: "#f59e0b",
+      isSystem: true,
+      type: "expense",
+      isFixed: false,
+      isFeeCategory: false,
+    },
+    {
+      name: "Suscripciones",
+      icon: "repeat",
+      color: "#8b5cf6",
+      isSystem: true,
+      type: "expense",
+      isFixed: true,
+      isFeeCategory: false,
+    },
+    {
+      name: "Servicios Básicos",
+      icon: "lightning",
+      color: "#eab308",
+      isSystem: true,
+      type: "expense",
+      isFixed: true,
+      isFeeCategory: false,
+    },
+    {
+      name: "Entretenimiento",
+      icon: "popcorn",
+      color: "#ec4899",
+      isSystem: true,
+      type: "expense",
+      isFixed: false,
+      isFeeCategory: false,
+    },
+    {
+      name: "Ahorros",
+      icon: "piggy-bank",
+      color: "#14b8a6",
+      isSystem: true,
+      type: "transfer",
+      isFixed: true,
+      isFeeCategory: false,
+    },
+    {
+      name: "Comisiones Bancarias",
+      icon: "receipt",
+      color: "#ef4444",
+      isSystem: true,
+      type: "expense",
+      isFixed: false,
+      isFeeCategory: true,
+    },
+  ] as const;
 
-  // for (const cat of systemCategories) {
-  //   await db
-  //     .insert(categories)
-  //     .values({
-  //       name: cat.name,
-  //       type:
-  //         cat.type as
-  //           | "income"
-  //           | "fixed_expense"
-  //           | "variable_expense"
-  //           | "transfer"
-  //           | "savings",
-  //       icon: cat.icon,
-  //       color: cat.color,
-  //       isSystem: cat.isSystem,
-  //     })
-  //     .onConflictDoNothing({ target: categories.name });
-  // }
+  // Obtenemos las categorías del sistema existentes para no duplicarlas
+  const existingCategories = await db
+    .select({ name: categories.name })
+    .from(categories)
+    .where(eq(categories.isSystem, true));
 
-  // console.log("✅ Seed de Categorías completado.");
+  const existingNames = new Set(existingCategories.map((c) => c.name));
+
+  for (const cat of systemCategories) {
+    if (!existingNames.has(cat.name)) {
+      await db.insert(categories).values({
+        name: cat.name,
+        type: cat.type,
+        icon: cat.icon,
+        color: cat.color,
+        isSystem: cat.isSystem,
+        isFixed: cat.isFixed,
+        isFeeCategory: cat.isFeeCategory,
+      });
+    }
+  }
+
+  console.log(
+    "✅ Seed completado con éxito. ¡Todo está nítido y listo para producción! 🚀",
+  );
 }
 
 main().catch((err) => {

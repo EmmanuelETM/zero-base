@@ -25,12 +25,12 @@ export const accountTypeEnum = pgEnum("account_type", [
   "savings",
   "investment",
   "cooperative",
+  "cash",
 ]);
 
 export const categoryTypeEnum = pgEnum("category_type", [
   "income",
-  "fixed_expense",
-  "variable_expense",
+  "expense",
   "transfer",
 ]);
 
@@ -53,6 +53,7 @@ export const recurrenceFrequencyEnum = pgEnum("recurrence_frequency", [
   "weekly",
   "biweekly",
   "monthly",
+  "quarterly",
   "yearly",
 ]);
 
@@ -115,7 +116,7 @@ export const appSettings = pgTable(
     createdAt,
     updatedAt,
   },
-  (t) => [
+  () => [
     pgPolicy("Cualquier usuario autenticado puede leer settings", {
       as: "permissive",
       for: "select",
@@ -172,7 +173,7 @@ export const roles = pgTable(
     createdAt,
     updatedAt,
   },
-  (t) => [
+  () => [
     pgPolicy("Lectura de roles para usuarios autenticados", {
       as: "permissive",
       for: "select",

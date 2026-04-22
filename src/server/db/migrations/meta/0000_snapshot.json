@@ -1,5 +1,5 @@
 {
-  "id": "745c7f91-8e89-4041-a33f-4a71b094b626",
+  "id": "f5e02086-80ad-4873-9e84-803643c3e6d9",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2860,7 +2860,7 @@
     "public.account_type": {
       "name": "account_type",
       "schema": "public",
-      "values": ["checking", "savings", "investment", "cooperative"]
+      "values": ["checking", "savings", "investment", "cooperative", "cash"]
     },
     "public.audit_action": {
       "name": "audit_action",
@@ -2891,7 +2891,7 @@
     "public.category_type": {
       "name": "category_type",
       "schema": "public",
-      "values": ["income", "fixed_expense", "variable_expense", "transfer"]
+      "values": ["income", "expense", "transfer"]
     },
     "public.notification_type": {
       "name": "notification_type",
@@ -2901,7 +2901,14 @@
     "public.recurrence_frequency": {
       "name": "recurrence_frequency",
       "schema": "public",
-      "values": ["daily", "weekly", "biweekly", "monthly", "yearly"]
+      "values": [
+        "daily",
+        "weekly",
+        "biweekly",
+        "monthly",
+        "quarterly",
+        "yearly"
+      ]
     },
     "public.transaction_type": {
       "name": "transaction_type",
