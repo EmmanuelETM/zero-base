@@ -9,6 +9,7 @@ import {
   ResetPasswordSchema,
 } from "@/lib/validations/auth";
 import type { AuthState } from "@/types/auth";
+import { env } from "@/env";
 
 // ===== Login =====
 
@@ -91,7 +92,7 @@ export async function forgotPasswordAction(
   const { error } = await supabase.auth.resetPasswordForEmail(
     parsed.data.email,
     {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/reset-password`,
+      redirectTo: `${env.NEXT_PUBLIC_SITE_URL}/reset-password`,
     },
   );
 

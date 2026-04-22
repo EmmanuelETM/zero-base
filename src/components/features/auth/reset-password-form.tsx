@@ -90,7 +90,7 @@ export function ResetPasswordForm({
                     type={showPassword ? "text" : "password"}
                     placeholder="Mín. 8 caracteres"
                     autoComplete="new-password"
-                    className="bg-background/50 h-11 pr-10"
+                    className="bg-background/50 h-11 p-4"
                     {...register("password")}
                   />
                   <button
@@ -118,7 +118,7 @@ export function ResetPasswordForm({
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Repite tu contraseña"
                     autoComplete="new-password"
-                    className="bg-background/50 h-11 pr-10"
+                    className="bg-background/50 h-11 p-4"
                     {...register("confirmPassword")}
                   />
                   <button

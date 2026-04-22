@@ -51,6 +51,7 @@ export function RegisterForm({
       formData.set("fullName", data.fullName);
       formData.set("email", data.email);
       formData.set("password", data.password);
+      formData.set("confirmPassword", data.confirmPassword);
 
       const result = await registerAction(undefined, formData);
       if (result?.error) setServerError(result.error);
@@ -141,7 +142,7 @@ export function RegisterForm({
                   type="text"
                   placeholder="Juan Pérez"
                   autoComplete="name"
-                  className="bg-background/50 h-11"
+                  className="bg-background/50 h-11 p-4"
                   {...register("fullName")}
                 />
                 <FieldError errors={[errors.fullName]} />
@@ -154,37 +155,67 @@ export function RegisterForm({
                   type="email"
                   placeholder="tu@correo.com"
                   autoComplete="email"
-                  className="bg-background/50 h-11"
+                  className="bg-background/50 h-11 p-4"
                   {...register("email")}
                 />
                 <FieldError errors={[errors.email]} />
               </Field>
 
-              <Field data-invalid={!!errors.password}>
-                <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Mín. 8 caracteres"
-                    autoComplete="new-password"
-                    className="bg-background/50 h-11 pr-10"
-                    {...register("password")}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
-                  >
-                    {showPassword ? (
-                      <EyeClosedIcon className="size-5" />
-                    ) : (
-                      <EyeIcon className="size-5" />
-                    )}
-                  </button>
-                </div>
-                <FieldError errors={[errors.password]} />
-              </Field>
+              <div className="flex items-center gap-2">
+                <Field data-invalid={!!errors.password}>
+                  <FieldLabel htmlFor="password">Contraseña</FieldLabel>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Mín. 8 caracteres"
+                      autoComplete="new-password"
+                      className="bg-background/50 h-11 p-4"
+                      {...register("password")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeClosedIcon className="size-5" />
+                      ) : (
+                        <EyeIcon className="size-5" />
+                      )}
+                    </button>
+                  </div>
+                  <FieldError errors={[errors.password]} />
+                </Field>
+
+                <Field data-invalid={!!errors.confirmPassword}>
+                  <FieldLabel htmlFor="confirm-password">
+                    Confirmar contraseña
+                  </FieldLabel>
+                  <div className="relative">
+                    <Input
+                      id="confirm-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Mín. 8 caracteres"
+                      autoComplete="new-password"
+                      className="bg-background/50 h-11 p-4"
+                      {...register("confirmPassword")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeClosedIcon className="size-5" />
+                      ) : (
+                        <EyeIcon className="size-5" />
+                      )}
+                    </button>
+                  </div>
+                  <FieldError errors={[errors.confirmPassword]} />
+                </Field>
+              </div>
 
               <div className="pt-2">
                 <Button

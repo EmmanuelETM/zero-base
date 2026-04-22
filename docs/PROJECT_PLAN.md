@@ -36,18 +36,18 @@ src/
 	types/              → re-exports de los types de Zod
 ```
 
-- [ ] Configurar path aliases en `tsconfig.json` (`@/components`, `@/lib`, `@/types`)
-- [ ] Crear `middleware.ts` en la raíz para protección de rutas con Supabase SSR
+- [x] Configurar path aliases en `tsconfig.json` (`@/components`, `@/lib`, `@/types`)
+- [x] Crear `middleware.ts` en la raíz para protección de rutas con Supabase SSR
 
 ### 0.2 Autenticación (Supabase + `@supabase/ssr`)
 
-- [ ] Configurar cliente Supabase server-side (`createServerClient`) en `lib/supabase/server.ts`
-- [ ] Configurar cliente Supabase browser-side (`createBrowserClient`) en `lib/supabase/client.ts`
-- [ ] Implementar `middleware.ts` que refresca el session cookie en cada request
-- [ ] Crear páginas de auth: Login, Register, Forgot Password, Reset Password
-- [ ] Proteger el layout `(dashboard)` verificando sesión en el Server Component raíz
-- [ ] Vincular `auth.users` de Supabase con la tabla `profiles` al momento del registro (trigger o Server Action)
-- [ ] Configurar variables de entorno: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL`
+- [x] Configurar cliente Supabase server-side (`createServerClient`) en `server/supabase/server.ts`
+- [x] Configurar cliente Supabase browser-side (`createBrowserClient`) en `server/supabase/client.ts`
+- [x] Implementar `middleware.ts` que refresca el session cookie en cada request
+- [x] Crear páginas de auth: Login, Register, Forgot Password, Reset Password
+- [x] Proteger el layout `(dashboard)` verificando sesión en el Server Component raíz
+- [-] Vincular `auth.users` de Supabase con la tabla `users` al momento del registro (trigger o Server Action)
+- [x] Configurar variables de entorno: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL`
 
 ### 0.3 Base de Datos & ORM
 

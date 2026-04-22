@@ -126,7 +126,7 @@ export function ForgotPasswordForm({
                   type="email"
                   placeholder="tu@correo.com"
                   autoComplete="email"
-                  className="bg-background/50 h-11"
+                  className="bg-background/50 h-11 p-4"
                   {...register("email")}
                 />
                 <FieldError errors={[errors.email]} />

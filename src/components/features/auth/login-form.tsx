@@ -112,7 +112,7 @@ export function LoginForm({
                   type="email"
                   placeholder="juan@ejemplo.com"
                   autoComplete="email"
-                  className="bg-background/50 h-11"
+                  className="bg-background/50 h-11 p-4"
                   {...register("email")}
                 />
                 <FieldError errors={[errors.email]} />
@@ -135,7 +135,7 @@ export function LoginForm({
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     autoComplete="current-password"
-                    className="bg-background/50 h-11 pr-10"
+                    className="bg-background/50 h-11 p-4"
                     {...register("password")}
                   />
                   <button
