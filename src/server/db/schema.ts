@@ -15,83 +15,57 @@ import {
   pgPolicy,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
+import {
+  ACCOUNT_TYPES,
+  AUDIT_ACTIONS,
+  AUTOMATION_RULE_FIELDS,
+  AUTOMATION_RULE_OPERATORS,
+  BUDGET_STATUS,
+  CATEGORY_TYPES,
+  NOTIFICATION_TYPES,
+  RECURRENCE_FREQUENCIES,
+  TRANSACTION_TYPES,
+  WEBHOOK_STATUS,
+} from "@/lib/constants";
 
 // ============================================================
-// 1. ENUMS
+// 1. ENUMS & Helpers
 // ============================================================
 
-export const accountTypeEnum = pgEnum("account_type", [
-  "checking",
-  "savings",
-  "investment",
-  "cooperative",
-  "cash",
-]);
+export const accountTypeEnum = pgEnum("account_type", ACCOUNT_TYPES);
 
-export const categoryTypeEnum = pgEnum("category_type", [
-  "income",
-  "expense",
-  "transfer",
-]);
+export const categoryTypeEnum = pgEnum("category_type", CATEGORY_TYPES);
 
-export const transactionTypeEnum = pgEnum("transaction_type", [
-  "income",
-  "expense",
-  "transfer",
-  "card_payment",
-]);
+export const transactionTypeEnum = pgEnum(
+  "transaction_type",
+  TRANSACTION_TYPES,
+);
 
-export const notificationTypeEnum = pgEnum("notification_type", [
-  "info",
-  "alert",
-  "reminder",
-  "system",
-]);
+export const notificationTypeEnum = pgEnum(
+  "notification_type",
+  NOTIFICATION_TYPES,
+);
 
-export const recurrenceFrequencyEnum = pgEnum("recurrence_frequency", [
-  "daily",
-  "weekly",
-  "biweekly",
-  "monthly",
-  "quarterly",
-  "yearly",
-]);
+export const recurrenceFrequencyEnum = pgEnum(
+  "recurrence_frequency",
+  RECURRENCE_FREQUENCIES,
+);
 
-export const automationRuleFieldEnum = pgEnum("automation_rule_field", [
-  "description",
-  "merchant",
-  "amount",
-]);
+export const automationRuleFieldEnum = pgEnum(
+  "automation_rule_field",
+  AUTOMATION_RULE_FIELDS,
+);
 
-export const automationRuleOperatorEnum = pgEnum("automation_rule_operator", [
-  "contains",
-  "equals",
-  "starts_with",
-  "greater_than",
-  "less_than",
-]);
+export const automationRuleOperatorEnum = pgEnum(
+  "automation_rule_operator",
+  AUTOMATION_RULE_OPERATORS,
+);
 
-// FIX: Nuevo enum para estados del presupuesto (Módulo 3 — ZBB)
-export const budgetStatusEnum = pgEnum("budget_status", [
-  "draft", // En construcción, dinero sin asignar > 0
-  "balanced", // Dinero sin asignar = 0 (base-cero logrado)
-  "closed", // Período cerrado, ya no se puede editar
-]);
+export const budgetStatusEnum = pgEnum("budget_status", BUDGET_STATUS);
 
-// FIX: Nuevo enum para estado de webhooks entrantes (Módulo 4)
-export const webhookStatusEnum = pgEnum("webhook_status", [
-  "pending",
-  "processed",
-  "failed",
-  "ignored", // Llegó pero no matcheó ninguna regla
-]);
+export const webhookStatusEnum = pgEnum("webhook_status", WEBHOOK_STATUS);
 
-// FIX: Nuevo enum para acción en audit log
-export const auditActionEnum = pgEnum("audit_action", [
-  "insert",
-  "update",
-  "delete",
-]);
+export const auditActionEnum = pgEnum("audit_action", AUDIT_ACTIONS);
 
 const createdAt = timestamp("created_at").notNull().defaultNow();
 const updatedAt = timestamp("updated_at")

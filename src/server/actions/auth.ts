@@ -36,7 +36,7 @@ export async function loginAction(
     };
   }
 
-  redirect("/accounts");
+  redirect("/analytics");
 }
 
 // ===== Register =====

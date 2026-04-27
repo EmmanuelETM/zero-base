@@ -84,11 +84,13 @@ src/
 
 ### 2.1 CRUD de Cuentas (`Account`)
 
-- [ ] Server Action `createAccount(data: NewAccount)` — con validación Zod
-- [ ] Server Action `updateAccount(id, data: UpdateAccount)`
-- [ ] Server Action `deleteAccount(id)` — soft delete o bloquear si tiene transacciones
-- [ ] Query `getAccountsByUser(userId)` — usando `React.cache()` para deduplicar por request
-- [ ] Query `getAccountBalance(accountId)` — calculado desde transacciones reales, no campo redundante
+- [x] Server Action `createAccount(data: NewAccount)` — con validación Zod
+- [x] Server Action `updateAccount(id, data: UpdateAccount)`
+- [x] Server Action `deleteAccount(id)` — soft delete o bloquear si tiene transacciones
+- [x] Server Action `archiveAccount(id)` — soft delete o bloquear si tiene transacciones
+- [x] Server Action `unarchiveAccount(id)` — soft delete o bloquear si tiene transacciones
+- [x] Query `getAccountsByUser(userId)` — usando `React.cache()` para deduplicar por request
+- [x] Query `getAccountBalance(accountId)` — calculado desde transacciones reales, no campo redundante
 
 ### 2.2 UI de Cuentas
 

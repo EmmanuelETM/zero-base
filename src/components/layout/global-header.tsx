@@ -81,7 +81,7 @@ export function GlobalHeader({ user }: GlobalHeaderProps) {
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 md:px-6">
           {/* ── Logo ─────────────────────────────────────────────────────── */}
           <Link
-            href="/accounts"
+            href="/analytics"
             id="header-logo"
             className="flex shrink-0 items-center gap-2 font-semibold tracking-tight"
           >
