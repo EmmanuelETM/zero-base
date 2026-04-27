@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cache } from "react";
 import { db } from "@/server/db";
 import { accounts, transactions } from "@/server/db/schema";
-import { eq, and, sql, desc, asc } from "drizzle-orm";
+import { eq, and, sql, asc } from "drizzle-orm";
 import { createServerClient } from "@/server/supabase/server";
 import {
   createAccountSchema,
@@ -212,7 +212,11 @@ export const getTotalActiveBalance = cache(async () => {
   if (!user) return 0;
 
   const activeAccounts = await db.query.accounts.findMany({
-    where: and(eq(accounts.userId, user.id), eq(accounts.isArchived, false), eq(accounts.isOperational, false)),
+    where: and(
+      eq(accounts.userId, user.id),
+      eq(accounts.isArchived, false),
+      eq(accounts.isOperational, false),
+    ),
     columns: { id: true },
   });
 
@@ -221,6 +225,6 @@ export const getTotalActiveBalance = cache(async () => {
     const bal = await getAccountBalance(acc.id);
     total += bal;
   }
-  
+
   return total;
 });
