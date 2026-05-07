@@ -1,7 +1,6 @@
 "use client";
 
 import { useTransition } from "react";
-import { formatCurrency } from "@/lib/utils";
 import {
   BankIcon,
   PiggyBankIcon,
@@ -21,6 +20,7 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { deleteAccountAction } from "@/server/actions/accounts";
 import { Account } from "@/server/db/types";
+import { formatCurrency, formatDate } from "@/lib/formatter";
 
 const ACCOUNT_ICONS: Record<string, React.ElementType> = {
   checking: BankIcon,
@@ -116,12 +116,7 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
         <div className="text-muted-foreground flex items-center text-xs">
           <ClockCounterClockwiseIcon className="mr-1 h-3 w-3" />
           <span suppressHydrationWarning>
-            Actualizado{" "}
-            {new Date(account.updatedAt).toLocaleDateString("es-DO", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            })}
+            Actualizado {formatDate(account.updatedAt)}
           </span>
         </div>
       </div>

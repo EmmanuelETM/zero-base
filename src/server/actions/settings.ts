@@ -2,24 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/server/supabase/server";
-import { db } from "@/server/db";
-import { users, userPreferences } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
 import {
   UpdateProfileSchema,
   UpdatePreferencesSchema,
 } from "@/lib/validations/settings";
+import type { SettingsState } from "@/types/settings";
+import { requireUser } from "@/lib/auth/requite-user";
+import {
+  updateUserAvatar,
+  updateUserPreferences,
+  updateUserProfile,
+} from "../db/repositories/settings";
+import { AVATAR_ALLOWED_TYPES, AVATAR_MAX_SIZE } from "@/lib/constants";
+import { flattenFieldErrors } from "@/lib/validations/utils";
 
-// ─── Shared state type ────────────────────────────────────────────────────────
-
-export type SettingsState = {
-  error?: string;
-  message?: string;
-  fieldErrors?: Partial<Record<string, string[]>>;
-};
-
-// ─── Helper: get authenticated user id ───────────────────────────────────────
-
+// ======================================================
+//                        Helpers
+// ======================================================
 async function getAuthUserId(): Promise<string | null> {
   const supabase = await createServerClient();
   const {
@@ -28,32 +27,26 @@ async function getAuthUserId(): Promise<string | null> {
   return user?.id ?? null;
 }
 
-// ─── Update Profile ───────────────────────────────────────────────────────────
+// ======================================================
+//                        Mutations
+// ======================================================
 
 export async function updateProfileAction(
   _state: SettingsState | undefined,
   formData: FormData,
 ): Promise<SettingsState> {
-  const raw = {
+  const user = await requireUser();
+
+  const parsed = UpdateProfileSchema.safeParse({
     fullName: formData.get("fullName"),
     currency: formData.get("currency"),
-  };
-
-  const parsed = UpdateProfileSchema.safeParse(raw);
+  });
   if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
+    return { fieldErrors: flattenFieldErrors(parsed.error) };
   }
 
-  const userId = await getAuthUserId();
-  if (!userId) return { error: "No autenticado." };
-
-  await db
-    .update(users)
-    .set({
-      fullName: parsed.data.fullName,
-      currency: parsed.data.currency,
-    })
-    .where(eq(users.id, userId));
+  const updated = await updateUserProfile(user.id, parsed.data);
+  if (!updated) return { error: "No se pudo actualizar el perfil." };
 
   revalidatePath("/settings/profile");
   return { message: "Perfil actualizado correctamente." };
@@ -74,38 +67,29 @@ export async function uploadAvatarAction(
 ): Promise<SettingsState> {
   const file = formData.get("avatar");
 
+  // Validaciones del archivo antes de tocar auth o DB
   if (!(file instanceof File) || file.size === 0) {
     return { error: "Selecciona una imagen válida." };
   }
-
-  if (file.size > 5 * 1024 * 1024) {
+  if (file.size > AVATAR_MAX_SIZE) {
     return { error: "La imagen no puede superar 5 MB." };
   }
-
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-  if (!allowedTypes.includes(file.type)) {
+  if (!AVATAR_ALLOWED_TYPES.includes(file.type as any)) {
     return { error: "Formato no soportado. Usa JPG, PNG, WebP o GIF." };
   }
 
-  const userId = await getAuthUserId();
-  if (!userId) return { error: "No autenticado." };
-
+  const user = await requireUser();
   const supabase = await createServerClient();
 
-  // Use a deterministic path so each upload overwrites the previous avatar
-  // instead of creating orphan files.
   const ext = file.type.split("/")[1];
-  const path = `${userId}/avatar.${ext}`;
+  const path = `${user.id}/avatar.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from("avatars")
-    .upload(path, file, {
-      upsert: true,
-      contentType: file.type,
-    });
+    .upload(path, file, { upsert: true, contentType: file.type });
 
   if (uploadError) {
-    console.error("[uploadAvatar]", uploadError);
+    console.error("[uploadAvatar]", uploadError.message);
     return { error: "Error al subir la imagen. Intenta de nuevo." };
   }
 
@@ -113,10 +97,12 @@ export async function uploadAvatarAction(
     data: { publicUrl },
   } = supabase.storage.from("avatars").getPublicUrl(path);
 
-  // Append a cache-busting query param so the browser re-fetches the image.
+  // Cache-busting para que el browser no sirva la imagen anterior
   const avatarUrl = `${publicUrl}?t=${Date.now()}`;
 
-  await db.update(users).set({ avatarUrl }).where(eq(users.id, userId));
+  const updated = await updateUserAvatar(user.id, { avatarUrl });
+  if (!updated)
+    return { error: "Imagen subida pero no se pudo guardar la URL." };
 
   revalidatePath("/settings/profile");
   return { message: "Avatar actualizado correctamente." };
@@ -128,31 +114,22 @@ export async function updatePreferencesAction(
   _state: SettingsState | undefined,
   formData: FormData,
 ): Promise<SettingsState> {
-  const raw = {
+  const user = await requireUser();
+
+  const parsed = UpdatePreferencesSchema.safeParse({
     theme: formData.get("theme"),
     enablePushNotifications: formData.get("enablePushNotifications") === "true",
     enableEmailNotifications:
       formData.get("enableEmailNotifications") === "true",
     lowBalanceThreshold: Number(formData.get("lowBalanceThreshold") ?? 0),
-  };
+  });
+  if (!parsed.success) return { fieldErrors: flattenFieldErrors(parsed.error) };
 
-  const parsed = UpdatePreferencesSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
-  }
-
-  const userId = await getAuthUserId();
-  if (!userId) return { error: "No autenticado." };
-
-  await db
-    .update(userPreferences)
-    .set({
-      theme: parsed.data.theme,
-      enablePushNotifications: parsed.data.enablePushNotifications,
-      enableEmailNotifications: parsed.data.enableEmailNotifications,
-      lowBalanceThreshold: String(parsed.data.lowBalanceThreshold),
-    })
-    .where(eq(userPreferences.userId, userId));
+  const updated = await updateUserPreferences(user.id, {
+    ...parsed.data,
+    lowBalanceThreshold: String(parsed.data.lowBalanceThreshold),
+  });
+  if (!updated) return { error: "No se pudieron guardar las preferencias." };
 
   revalidatePath("/settings/preferences");
   return { message: "Preferencias guardadas." };

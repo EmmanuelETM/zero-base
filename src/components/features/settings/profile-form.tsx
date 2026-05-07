@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toUserMessage } from "@/lib/errors";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,7 +81,7 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Optimistic preview
+    // Preview optimista
     const objectUrl = URL.createObjectURL(file);
     setAvatarPreview(objectUrl);
 
@@ -88,31 +90,33 @@ export function ProfileForm({ defaultValues }: ProfileFormProps) {
 
     startUploadTransition(async () => {
       const result = await uploadAvatarAction(undefined, formData);
-      if (result.error) {
-        setFeedback({ type: "error", message: result.error });
-        // Revert preview on error
+
+      if (result?.error) {
+        toast.error(result.error);
         setAvatarPreview(defaultValues.avatarUrl);
-      } else {
-        setFeedback({ type: "success", message: "Avatar actualizado." });
+        return;
       }
+
+      toast.success(result?.message ?? "Avatar actualizado.");
     });
   }
 
   // ── Profile save ───────────────────────────────────────────────────────────
 
   function onSubmit(data: UpdateProfileInput) {
-    setFeedback(null);
     startTransition(async () => {
       const formData = new FormData();
       formData.set("fullName", data.fullName);
       formData.set("currency", data.currency);
 
       const result = await updateProfileAction(undefined, formData);
-      if (result.error) {
-        setFeedback({ type: "error", message: result.error });
-      } else if (result.message) {
-        setFeedback({ type: "success", message: result.message });
+
+      if (result?.error) {
+        toast.error(result.error);
+        return;
       }
+
+      toast.success(result?.message ?? "Perfil actualizado.");
     });
   }
 

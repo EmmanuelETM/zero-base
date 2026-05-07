@@ -8,8 +8,6 @@ import {
   SunIcon,
   MoonIcon,
   MonitorIcon,
-  CheckCircleIcon,
-  WarningCircleIcon,
   BellIcon,
   EnvelopeIcon,
   CurrencyDollarIcon,
@@ -21,10 +19,10 @@ import {
   type UpdatePreferencesInput,
 } from "@/lib/validations/settings";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { Input } from "@/components/ui/input";
+import { toUserMessage } from "@/lib/errors";
+import { toast } from "sonner";
 
 interface PreferencesFormProps {
   defaultValues: {
@@ -35,16 +33,13 @@ interface PreferencesFormProps {
   };
 }
 
-// ─── Theme options ────────────────────────────────────────────────────────────
-
 const themeOptions = [
   { value: "light" as const, label: "Claro", icon: SunIcon },
   { value: "dark" as const, label: "Oscuro", icon: MoonIcon },
   { value: "system" as const, label: "Sistema", icon: MonitorIcon },
 ];
 
-// ─── Toggle switch ────────────────────────────────────────────────────────────
-
+// cambiar esto por switch de shadcn
 function Toggle({
   checked,
   onChange,
@@ -104,10 +99,6 @@ function Section({
 
 export function PreferencesForm({ defaultValues }: PreferencesFormProps) {
   const [isPending, startTransition] = useTransition();
-  const [feedback, setFeedback] = useState<{
-    type: "success" | "error";
-    message: string;
-  } | null>(null);
 
   const { setTheme } = useTheme();
 
@@ -122,9 +113,7 @@ export function PreferencesForm({ defaultValues }: PreferencesFormProps) {
   });
 
   function onSubmit(data: UpdatePreferencesInput) {
-    setFeedback(null);
-
-    // Apply theme immediately for instant feedback (optimistic)
+    // Optimistic — aplicar tema antes de esperar la action
     setTheme(data.theme);
 
     startTransition(async () => {
@@ -141,35 +130,18 @@ export function PreferencesForm({ defaultValues }: PreferencesFormProps) {
       formData.set("lowBalanceThreshold", String(data.lowBalanceThreshold));
 
       const result = await updatePreferencesAction(undefined, formData);
-      if (result.error) {
-        setFeedback({ type: "error", message: result.error });
-      } else if (result.message) {
-        setFeedback({ type: "success", message: result.message });
+
+      if (result?.error) {
+        toast.error(result.error);
+        return;
       }
+
+      toast.success(result?.message ?? "Preferencias actualizadas.");
     });
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* ── Feedback ──────────────────────────────────────────────────────── */}
-      {feedback && (
-        <Alert
-          variant={feedback.type === "error" ? "destructive" : "default"}
-          className={
-            feedback.type === "success"
-              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-              : "bg-destructive/10 text-destructive border-none"
-          }
-        >
-          {feedback.type === "success" ? (
-            <CheckCircleIcon weight="fill" className="size-4" />
-          ) : (
-            <WarningCircleIcon weight="fill" className="size-4" />
-          )}
-          <AlertDescription>{feedback.message}</AlertDescription>
-        </Alert>
-      )}
-
       {/* ── Theme picker ──────────────────────────────────────────────────── */}
       <Section label="Apariencia" description="Elige cómo se ve la interfaz.">
         <Controller
@@ -280,14 +252,14 @@ export function PreferencesForm({ defaultValues }: PreferencesFormProps) {
               className="text-muted-foreground size-4"
             />
           </div>
-          <input
+          <Input
             id="lowBalanceThreshold"
             type="number"
             min={0}
             step={100}
             placeholder="5000"
             className={cn(
-              "border-input bg-background/50 text-foreground placeholder:text-muted-foreground h-11 w-full rounded-full border pr-3 pl-9 text-sm",
+              "border-input bg-background/50 text-foreground placeholder:text-muted-foreground h-11 w-full border pr-3 pl-9 text-sm",
               "focus:ring-ring focus:ring-2 focus:ring-offset-2 focus:outline-none",
               errors.lowBalanceThreshold && "border-destructive",
             )}

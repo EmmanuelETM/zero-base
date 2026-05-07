@@ -2,77 +2,71 @@
 
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/server/supabase/server";
+
 import {
   LoginSchema,
   RegisterSchema,
   ForgotPasswordSchema,
   ResetPasswordSchema,
 } from "@/lib/validations/auth";
-import type { AuthState } from "@/types/auth";
-import { env } from "@/env";
 
-// ===== Login =====
+import { toAuthErrorMessage } from "@/lib/errors";
+import { env } from "@/env";
+import type { AuthState } from "@/types/auth";
+import { flattenFieldErrors } from "@/lib/validations/utils";
+
+// ======================================================
+//                      Login
+// ======================================================
 
 export async function loginAction(
   _state: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const raw = {
+  const parsed = LoginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
-  };
+  });
 
-  const parsed = LoginSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
-  }
+  if (!parsed.success) return { fieldErrors: flattenFieldErrors(parsed.error) };
 
   const supabase = await createServerClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
-
-  if (error) {
-    return {
-      error: "Credenciales incorrectas. Verifica tu correo y contraseña.",
-    };
-  }
+  if (error) return { error: toAuthErrorMessage(error.message) };
 
   redirect("/analytics");
 }
 
-// ===== Register =====
+// ======================================================
+//                      Register
+// ======================================================
 
 export async function registerAction(
   _state: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const raw = {
+  const parsed = RegisterSchema.safeParse({
     fullName: formData.get("fullName"),
     email: formData.get("email"),
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
-  };
+  });
+  if (!parsed.success) return { fieldErrors: flattenFieldErrors(parsed.error) };
 
-  const parsed = RegisterSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
-  }
-
+  // Esta validación podría vivir en el schema con .refine(), considera moverla
   if (parsed.data.password !== parsed.data.confirmPassword) {
-    return { error: "Las contraseñas no coinciden." };
+    return {
+      fieldErrors: { confirmPassword: ["Las contraseñas no coinciden."] },
+    };
   }
 
   const supabase = await createServerClient();
   const { error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: {
-      data: { full_name: parsed.data.fullName },
-    },
+    options: { data: { full_name: parsed.data.fullName } },
   });
-
-  if (error) {
-    return { error: error.message };
-  }
+  if (error) return { error: toAuthErrorMessage(error.message) };
 
   return {
     message:
@@ -80,32 +74,29 @@ export async function registerAction(
   };
 }
 
-// ===== Forgot Password =====
+// ======================================================
+//                  Forgot Password
+// ======================================================
 
 export async function forgotPasswordAction(
   _state: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const raw = { email: formData.get("email") };
-
-  const parsed = ForgotPasswordSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
-  }
+  const parsed = ForgotPasswordSchema.safeParse({
+    email: formData.get("email"),
+  });
+  if (!parsed.success) return { fieldErrors: flattenFieldErrors(parsed.error) };
 
   const supabase = await createServerClient();
   const { error } = await supabase.auth.resetPasswordForEmail(
     parsed.data.email,
     {
-      // The callback route exchanges the PKCE code for a session and then
-      // redirects the user to /reset-password.
       redirectTo: `${env.NEXT_PUBLIC_SITE_URL}/api/auth/callback?next=/reset-password`,
     },
   );
 
-  if (error) {
-    return { error: error.message };
-  }
+  // Deliberadamente ambiguo — no revelamos si el correo existe o no
+  if (error) console.error("[forgotPassword]", error.message);
 
   return {
     message:
@@ -113,27 +104,21 @@ export async function forgotPasswordAction(
   };
 }
 
-// ===== Reset Password =====
+// ======================================================
+//                    Reset Password
+// ======================================================
 
 export async function resetPasswordAction(
   _state: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const raw = {
+  const parsed = ResetPasswordSchema.safeParse({
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
-  };
-
-  const parsed = ResetPasswordSchema.safeParse(raw);
-  if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
-  }
+  });
+  if (!parsed.success) return { fieldErrors: flattenFieldErrors(parsed.error) };
 
   const supabase = await createServerClient();
-
-  // Verify there is an active session before attempting the update.
-  // Without a session (obtained by exchangeCodeForSession in the callback
-  // route) this call would fail with an auth error.
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -148,19 +133,15 @@ export async function resetPasswordAction(
   const { error } = await supabase.auth.updateUser({
     password: parsed.data.password,
   });
+  if (error) return { error: toAuthErrorMessage(error.message) };
 
-  if (error) {
-    return { error: error.message };
-  }
-
-  // Sign out to invalidate the recovery session. The user must log in
-  // again with their new credentials.
   await supabase.auth.signOut();
-
   redirect("/login?reset=success");
 }
 
-// ─── Logout ───────────────────────────────────────────────────────────────────
+// ======================================================
+//                      Logout
+// ======================================================
 
 export async function logoutAction(): Promise<void> {
   const supabase = await createServerClient();

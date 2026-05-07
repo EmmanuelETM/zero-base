@@ -55,3 +55,12 @@ export const WEBHOOK_STATUS = [
 ] as const;
 
 export const AUDIT_ACTIONS = ["insert", "update", "delete"] as const;
+
+export const AVATAR_MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+
+export const AVATAR_ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+] as const;

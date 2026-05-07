@@ -24,9 +24,8 @@ import {
   CommandItem,
   CommandSeparator,
   CommandShortcut,
+  Command,
 } from "@/components/ui/command";
-
-// ─── Command registry ─────────────────────────────────────────────────────────
 
 const navItems = [
   {
@@ -95,84 +94,86 @@ export function CommandMenu() {
   }
 
   return (
-    <CommandDialog
-      open={commandMenuOpen}
-      onOpenChange={setCommandMenuOpen}
-      title="Menú de comandos"
-      description="Navega o ejecuta acciones rápidamente"
-    >
-      <CommandInput placeholder="Buscar páginas o acciones…" />
+    <Command>
+      <CommandDialog
+        open={commandMenuOpen}
+        onOpenChange={setCommandMenuOpen}
+        title="Menú de comandos"
+        description="Navega o ejecuta acciones rápidamente"
+      >
+        <CommandInput placeholder="Buscar páginas o acciones…" />
 
-      <CommandList>
-        <CommandEmpty>
-          <div className="flex flex-col items-center gap-2 py-2">
-            <MagnifyingGlassIcon
-              weight="duotone"
-              className="text-muted-foreground size-8"
-            />
-            <p className="text-muted-foreground text-sm">
-              Sin resultados para tu búsqueda.
-            </p>
-          </div>
-        </CommandEmpty>
+        <CommandList>
+          <CommandEmpty>
+            <div className="flex flex-col items-center gap-2 py-2">
+              <MagnifyingGlassIcon
+                weight="duotone"
+                className="text-muted-foreground size-8"
+              />
+              <p className="text-muted-foreground text-sm">
+                Sin resultados para tu búsqueda.
+              </p>
+            </div>
+          </CommandEmpty>
 
-        {/* ── Acciones rápidas ──────────────────────────────────────────── */}
-        <CommandGroup heading="Acciones">
-          {actionItems.map(({ label, href, icon: Icon }) => (
-            <CommandItem key={href} onSelect={() => runCommand(href)}>
-              <Icon weight="duotone" className="text-primary size-4" />
-              {label}
-            </CommandItem>
-          ))}
-        </CommandGroup>
+          {/* ── Acciones rápidas ──────────────────────────────────────────── */}
+          <CommandGroup heading="Acciones">
+            {actionItems.map(({ label, href, icon: Icon }) => (
+              <CommandItem key={href} onSelect={() => runCommand(href)}>
+                <Icon weight="duotone" className="text-primary size-4" />
+                {label}
+              </CommandItem>
+            ))}
+          </CommandGroup>
 
-        <CommandSeparator />
+          <CommandSeparator />
 
-        {/* ── Navegación ────────────────────────────────────────────────── */}
-        <CommandGroup heading="Navegar">
-          {navItems.map(({ label, href, icon: Icon, shortcut }) => (
-            <CommandItem key={href} onSelect={() => runCommand(href)}>
-              <Icon weight="regular" className="size-4" />
-              {label}
-              <CommandShortcut>{shortcut}</CommandShortcut>
-            </CommandItem>
-          ))}
-        </CommandGroup>
+          {/* ── Navegación ────────────────────────────────────────────────── */}
+          <CommandGroup heading="Navegar">
+            {navItems.map(({ label, href, icon: Icon, shortcut }) => (
+              <CommandItem key={href} onSelect={() => runCommand(href)}>
+                <Icon weight="regular" className="size-4" />
+                {label}
+                <CommandShortcut>{shortcut}</CommandShortcut>
+              </CommandItem>
+            ))}
+          </CommandGroup>
 
-        <CommandSeparator />
+          <CommandSeparator />
 
-        {/* ── Ajustes ───────────────────────────────────────────────────── */}
-        <CommandGroup heading="Ajustes">
-          {settingsItems.map(({ label, href, icon: Icon }) => (
-            <CommandItem key={href} onSelect={() => runCommand(href)}>
-              <Icon weight="regular" className="size-4" />
-              {label}
-            </CommandItem>
-          ))}
-        </CommandGroup>
-      </CommandList>
+          {/* ── Ajustes ───────────────────────────────────────────────────── */}
+          <CommandGroup heading="Ajustes">
+            {settingsItems.map(({ label, href, icon: Icon }) => (
+              <CommandItem key={href} onSelect={() => runCommand(href)}>
+                <Icon weight="regular" className="size-4" />
+                {label}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
 
-      {/* ── Footer hint ─────────────────────────────────────────────────── */}
-      <div className="border-border/40 flex items-center gap-3 border-t px-3 py-2">
-        <span className="text-muted-foreground text-xs">
-          <kbd className="bg-muted rounded px-1.5 py-0.5 font-mono text-[10px]">
-            ↑↓
-          </kbd>{" "}
-          navegar
-        </span>
-        <span className="text-muted-foreground text-xs">
-          <kbd className="bg-muted rounded px-1.5 py-0.5 font-mono text-[10px]">
-            ↵
-          </kbd>{" "}
-          seleccionar
-        </span>
-        <span className="text-muted-foreground text-xs">
-          <kbd className="bg-muted rounded px-1.5 py-0.5 font-mono text-[10px]">
-            Esc
-          </kbd>{" "}
-          cerrar
-        </span>
-      </div>
-    </CommandDialog>
+        {/* ── Footer hint ─────────────────────────────────────────────────── */}
+        <div className="border-border/40 flex items-center gap-3 border-t px-3 py-2">
+          <span className="text-muted-foreground text-xs">
+            <kbd className="bg-muted rounded px-1.5 py-0.5 font-mono text-[10px]">
+              ↑↓
+            </kbd>
+            navegar
+          </span>
+          <span className="text-muted-foreground text-xs">
+            <kbd className="bg-muted rounded px-1.5 py-0.5 font-mono text-[10px]">
+              ↵
+            </kbd>
+            seleccionar
+          </span>
+          <span className="text-muted-foreground text-xs">
+            <kbd className="bg-muted rounded px-1.5 py-0.5 font-mono text-[10px]">
+              Esc
+            </kbd>
+            cerrar
+          </span>
+        </div>
+      </CommandDialog>
+    </Command>
   );
 }

@@ -35,6 +35,8 @@ import {
   updateAccountAction,
 } from "@/server/actions/accounts";
 import { Account } from "@/server/db/types";
+import { toUserMessage } from "@/lib/errors";
+import { toast } from "sonner";
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   checking: "Corriente",
@@ -110,25 +112,23 @@ export function AccountFormDialog({
         formData.append(key, String(value));
       });
 
-      let res;
-      if (isEditing) {
-        res = await updateAccountAction(account.id, formData);
-      } else {
-        res = await createAccountAction(formData);
+      const result = isEditing
+        ? await updateAccountAction(account.id, formData)
+        : await createAccountAction(formData);
+
+      if (!result.ok) {
+        toast.error(toUserMessage(result.error));
+        return;
       }
 
-      if (res.success) {
-        onOpenChange(false);
-      } else {
-        // Idealmente aquí usarías un toast de shadcn en lugar de alert
-        alert(res.error || "Ocurrió un error");
-      }
+      toast.success(isEditing ? "Cuenta actualizada." : "Cuenta creada.");
+      onOpenChange(false);
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden p-0 sm:max-w-[460px]">
+      <DialogContent className="overflow-hidden p-0 sm:max-w-[440px]">
         {/* Header con padding dedicado para un look más limpio */}
         <div className="px-6 pt-6 pb-4">
           <DialogHeader>
@@ -159,16 +159,20 @@ export function AccountFormDialog({
           </Field>
 
           {/* Fila 2: Cuadrícula simétrica para Tipo y Balance */}
-          <div className="grid grid-cols-3">
+          <div className="grid grid-cols-[1fr_1.8fr]">
             <Field>
-              <FieldLabel htmlFor="type">Tipo</FieldLabel>
+              <FieldLabel
+                htmlFor="type"
+                className="text-xs font-medium tracking-wide"
+              >
+                Tipo
+              </FieldLabel>
               <FieldContent>
                 <Select
                   value={watch("type")}
                   onValueChange={(val: any) => setValue("type", val)}
                 >
-                  <SelectTrigger id="type">
-                    {/* FIX: Forzamos la traducción directamente en el Trigger por si Radix se confunde */}
+                  <SelectTrigger id="type" className="text-sm">
                     <SelectValue placeholder="Selecciona">
                       {watch("type")
                         ? ACCOUNT_TYPE_LABELS[watch("type")?.toLowerCase()] ||
@@ -177,35 +181,32 @@ export function AccountFormDialog({
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {ACCOUNT_TYPES.map((type) => {
-                      // FIX: Aseguramos que la llave siempre se busque en minúsculas
-                      const safeType = type.toLowerCase();
-                      const translatedLabel =
-                        ACCOUNT_TYPE_LABELS[safeType] || type;
-
-                      return (
-                        <SelectItem key={type} value={type}>
-                          {translatedLabel}
-                        </SelectItem>
-                      );
-                    })}
+                    {ACCOUNT_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {ACCOUNT_TYPE_LABELS[type.toLowerCase()] || type}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FieldError errors={[errors.type]} />
               </FieldContent>
             </Field>
 
-            <Field className="col-span-2">
-              <FieldLabel htmlFor="balance">Balance Inicial</FieldLabel>
+            <Field>
+              <FieldLabel
+                htmlFor="balance"
+                className="text-xs font-medium tracking-wide"
+              >
+                Balance inicial
+              </FieldLabel>
               <FieldContent>
-                <div className="relative">
-                  <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 text-sm font-medium">
+                <div className="relative flex items-center">
+                  <span className="absolute left-3 text-xs font-medium select-none">
                     RD$
                   </span>
                   <Input
                     id="balance"
                     type="number"
-                    step="0.01"
                     className="pl-10 text-right font-medium"
                     placeholder="0.00"
                     {...register("balance")}
@@ -220,15 +221,17 @@ export function AccountFormDialog({
           {/* Fila 3: Tarjeta de ajustes operacionales */}
           <Field className="border-border/50 bg-muted/20 flex flex-row items-center justify-between rounded-xl border p-4 shadow-sm">
             <div className="space-y-1">
-              <FieldLabel className="text-sm leading-none font-medium">
+              <FieldLabel
+                htmlFor="isOperational"
+                className="text-sm leading-none font-medium"
+              >
                 Cuenta Operativa
               </FieldLabel>
-              <div className="text-muted-foreground text-xs">
-                Se usará para gastos del día a día
-              </div>
+              <div className="text-xs">Se usará para gastos del día a día</div>
             </div>
             <FieldContent className="m-0">
               <Switch
+                id="isOperational"
                 checked={watch("isOperational")}
                 onCheckedChange={(val) => setValue("isOperational", val)}
               />
@@ -245,11 +248,7 @@ export function AccountFormDialog({
               Cancelar
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending
-                ? "Guardando..."
-                : isEditing
-                  ? "Guardar"
-                  : "Crear Cuenta"}
+              {isPending ? "Guardando..." : isEditing ? "Guardar" : "Crear"}
             </Button>
           </div>
         </form>

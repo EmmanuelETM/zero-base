@@ -2,229 +2,168 @@
 
 import { revalidatePath } from "next/cache";
 import { cache } from "react";
-import { db } from "@/server/db";
-import { accounts, transactions } from "@/server/db/schema";
-import { eq, and, sql, asc } from "drizzle-orm";
-import { createServerClient } from "@/server/supabase/server";
+import { requireUser } from "@/lib/auth/requite-user";
+import { ok, Errors, type Result } from "@/lib/result";
 import {
   createAccountSchema,
   updateAccountSchema,
 } from "@/lib/validations/accounts";
+import {
+  insertAccount,
+  updateAccount,
+  deleteAccount,
+  setAccountArchived,
+  findAccountById,
+  findActiveAccountsByUser,
+  findArchivedAccountsByUser,
+  findNonOperationalAccountIds,
+  countTransactionsByAccount,
+  calcAccountCashFlow,
+} from "@/server/db/repositories/accounts";
 
-export async function createAccountAction(formData: FormData) {
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autorizado");
+// ======================================================
+//                       Helpers
+// ======================================================
 
-  // Extraer datos del FormData y validar con Zod
-  const rawData = Object.fromEntries(formData.entries());
+function parseIsOperational(raw: Record<string, FormDataEntryValue>) {
+  return raw.isOperational === "on" || raw.isOperational === "true";
+}
+
+// ======================================================
+//                      Mutations
+// ======================================================
+
+export async function createAccountAction(
+  formData: FormData,
+): Promise<Result<{ id: string }>> {
+  const user = await requireUser();
+  const raw = Object.fromEntries(formData.entries());
+
   const parsed = createAccountSchema.safeParse({
-    ...rawData,
-    isOperational:
-      rawData.isOperational === "on" || rawData.isOperational === "true",
+    ...raw,
+    isOperational: parseIsOperational(raw),
   });
+  if (!parsed.success) return Errors.validation(parsed.error);
 
-  if (!parsed.success) {
-    return { error: "Datos inválidos", details: parsed.error.flatten() };
-  }
-
-  await db.insert(accounts).values({
-    ...parsed.data,
-    userId: user.id,
-  });
+  const inserted = await insertAccount({ ...parsed.data, userId: user.id });
+  if (!inserted) return Errors.dbError();
 
   revalidatePath("/accounts");
-  return { success: true };
+  return ok({ id: inserted.id });
 }
 
-export async function updateAccountAction(id: string, formData: FormData) {
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autorizado");
+export async function updateAccountAction(
+  id: string,
+  formData: FormData,
+): Promise<Result<{ id: string }>> {
+  const user = await requireUser();
+  const raw = Object.fromEntries(formData.entries());
 
-  const rawData = Object.fromEntries(formData.entries());
   const parsed = updateAccountSchema.safeParse({
-    ...rawData,
-    isOperational:
-      rawData.isOperational === "on" || rawData.isOperational === "true",
+    ...raw,
+    isOperational: parseIsOperational(raw),
   });
+  if (!parsed.success) return Errors.validation(parsed.error);
 
-  if (!parsed.success) {
-    return { error: "Datos inválidos", details: parsed.error.flatten() };
-  }
-
-  await db
-    .update(accounts)
-    .set(parsed.data)
-    .where(and(eq(accounts.id, id), eq(accounts.userId, user.id)));
+  const updated = await updateAccount(id, user.id, parsed.data);
+  if (!updated) return Errors.notFound("Cuenta");
 
   revalidatePath("/accounts");
-  return { success: true };
+  return ok({ id: updated.id });
 }
 
-export async function deleteAccountAction(id: string) {
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autorizado");
+export async function deleteAccountAction(
+  id: string,
+): Promise<Result<{ archived: boolean }>> {
+  const user = await requireUser();
 
-  // 1. Verificar si la cuenta tiene transacciones asociadas
-  const txCount = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(transactions)
-    .where(
-      and(
-        eq(transactions.userId, user.id),
-        sql`(${transactions.accountId} = ${id} OR ${transactions.destinationAccountId} = ${id})`,
-      ),
-    );
+  const account = await findAccountById(id, user.id);
+  if (!account) return Errors.notFound("Cuenta");
 
-  const hasTransactions = Number(txCount[0]?.count || 0) > 0;
+  const txCount = await countTransactionsByAccount(id, user.id);
+  const hasTransactions = txCount > 0;
 
   if (hasTransactions) {
-    // Soft Delete: La ocultamos pero mantenemos la integridad de datos
-    await db
-      .update(accounts)
-      .set({ isArchived: true })
-      .where(and(eq(accounts.id, id), eq(accounts.userId, user.id)));
+    // Soft delete — mantiene integridad referencial
+    const archived = await setAccountArchived(id, user.id, true);
+    if (!archived) return Errors.dbError();
   } else {
-    // Hard Delete: Cuenta limpia, la borramos sin piedad
-    await db
-      .delete(accounts)
-      .where(and(eq(accounts.id, id), eq(accounts.userId, user.id)));
+    // Hard delete — cuenta limpia
+    await deleteAccount(id, user.id);
   }
 
   revalidatePath("/accounts");
-  return { success: true };
+  return ok({ archived: hasTransactions });
 }
 
-export const getAccountsByUser = cache(async () => {
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autorizado");
+export async function archiveAccountAction(
+  id: string,
+): Promise<Result<{ id: string }>> {
+  const user = await requireUser();
 
-  return await db.query.accounts.findMany({
-    where: and(eq(accounts.userId, user.id), eq(accounts.isArchived, false)),
-    orderBy: asc(accounts.name),
-  });
+  const account = await findAccountById(id, user.id);
+  if (!account) return Errors.notFound("Cuenta");
+
+  if (account.isArchived) return Errors.conflict("Cuenta", "Ya está archivada");
+
+  const updated = await setAccountArchived(id, user.id, true);
+  if (!updated) return Errors.dbError();
+
+  revalidatePath("/accounts");
+  return ok({ id: updated.id });
+}
+
+export async function unarchiveAccountAction(
+  id: string,
+): Promise<Result<{ id: string }>> {
+  const user = await requireUser();
+
+  const account = await findAccountById(id, user.id);
+  if (!account) return Errors.notFound("Cuenta");
+
+  if (!account.isArchived)
+    return Errors.conflict("Cuenta", "No está archivada");
+
+  const updated = await setAccountArchived(id, user.id, false);
+  if (!updated) return Errors.dbError();
+
+  revalidatePath("/accounts");
+  return ok({ id: updated.id });
+}
+
+// ======================================================
+//                      Queries
+// ======================================================
+
+export const getAccountsByUser = cache(async () => {
+  const user = await requireUser();
+  return findActiveAccountsByUser(user.id);
 });
 
 export const getArchivedAccountsByUser = cache(async () => {
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autorizado");
-
-  return await db.query.accounts.findMany({
-    where: and(eq(accounts.userId, user.id), eq(accounts.isArchived, true)),
-    orderBy: asc(accounts.name),
-  });
+  const user = await requireUser();
+  return findArchivedAccountsByUser(user.id);
 });
 
 export const getAccountBalance = cache(async (accountId: string) => {
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autorizado");
+  const user = await requireUser();
 
-  // 1. Calcular el flujo de caja neto (Entradas - Salidas)
-  const [result] = await db
-    .select({
-      realBalance: sql<number>`
-        COALESCE(SUM(
-          CASE 
-            WHEN ${transactions.type} = 'income' AND ${transactions.accountId} = ${accountId} THEN ${transactions.amount}
-            WHEN ${transactions.type} = 'transfer' AND ${transactions.destinationAccountId} = ${accountId} THEN ${transactions.amount}
-            WHEN ${transactions.type} = 'expense' AND ${transactions.accountId} = ${accountId} THEN -${transactions.amount}
-            WHEN ${transactions.type} = 'transfer' AND ${transactions.accountId} = ${accountId} THEN -${transactions.amount}
-            WHEN ${transactions.type} = 'card_payment' AND ${transactions.accountId} = ${accountId} THEN -${transactions.amount}
-            ELSE 0
-          END
-        ), 0)
-      `,
-    })
-    .from(transactions)
-    .where(
-      and(
-        eq(transactions.userId, user.id),
-        sql`(${transactions.accountId} = ${accountId} OR ${transactions.destinationAccountId} = ${accountId})`,
-      ),
-    );
+  const account = await findAccountById(accountId, user.id);
+  if (!account) return 0;
 
-  // 2. Obtener el balance inicial (con el que se registró la cuenta)
-  const account = await db.query.accounts.findFirst({
-    where: and(eq(accounts.id, accountId), eq(accounts.userId, user.id)),
-    columns: { balance: true },
-  });
-
-  const initialBalance = account ? Number(account.balance) : 0;
-
-  // 3. Balance de la Realidad Absoluta = Inicial + Flujo de Caja
-  return initialBalance + Number(result?.realBalance ?? 0);
+  const cashFlow = await calcAccountCashFlow(accountId, user.id);
+  return Number(account.balance) + cashFlow;
 });
 
-export async function archiveAccountAction(id: string) {
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autorizado");
-
-  await db
-    .update(accounts)
-    .set({ isArchived: true })
-    .where(and(eq(accounts.id, id), eq(accounts.userId, user.id)));
-
-  revalidatePath("/accounts");
-  return { success: true };
-}
-
-export async function unarchiveAccountAction(id: string) {
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autorizado");
-
-  await db
-    .update(accounts)
-    .set({ isArchived: false })
-    .where(and(eq(accounts.id, id), eq(accounts.userId, user.id)));
-
-  revalidatePath("/accounts");
-  return { success: true };
-}
-
 export const getTotalActiveBalance = cache(async () => {
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return 0;
+  const user = await requireUser();
 
-  const activeAccounts = await db.query.accounts.findMany({
-    where: and(
-      eq(accounts.userId, user.id),
-      eq(accounts.isArchived, false),
-      eq(accounts.isOperational, false),
-    ),
-    columns: { id: true },
-  });
+  const activeAccounts = await findNonOperationalAccountIds(user.id);
 
-  let total = 0;
-  for (const acc of activeAccounts) {
-    const bal = await getAccountBalance(acc.id);
-    total += bal;
-  }
+  // Se ejecutan en paralelo en vez de secuencialmente
+  const balances = await Promise.all(
+    activeAccounts.map((acc) => calcAccountCashFlow(acc.id, user.id)),
+  );
 
-  return total;
+  return balances.reduce((sum, flow) => sum + flow, 0);
 });
