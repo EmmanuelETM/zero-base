@@ -17,10 +17,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { buttonVariants } from "@/components/ui/button";
 import { deleteAccountAction } from "@/server/actions/accounts";
 import { Account } from "@/server/db/types";
 import { formatCurrency, formatDate } from "@/lib/formatter";
+import { toast } from "sonner";
+import { toUserMessage } from "@/lib/errors";
 
 const ACCOUNT_ICONS: Record<string, React.ElementType> = {
   checking: BankIcon,
@@ -48,11 +61,18 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
   const [isPending, startTransition] = useTransition();
 
   const handleDelete = () => {
-    if (confirm("¿Estás seguro de que deseas eliminar esta cuenta?")) {
-      startTransition(async () => {
-        await deleteAccountAction(account.id);
-      });
-    }
+    startTransition(async () => {
+      const result = await deleteAccountAction(account.id);
+      if (!result.ok) {
+        toast.error(toUserMessage(result.error));
+        return;
+      }
+      toast.success(
+        result.data.archived
+          ? `"${account.name}" archivada.`
+          : `"${account.name}" eliminada.`,
+      );
+    });
   };
 
   return (
@@ -91,14 +111,42 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
               <PencilSimpleIcon className="mr-2 h-4 w-4" />
               Editar
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={handleDelete}
-              disabled={isPending}
-              className="text-destructive focus:text-destructive"
-            >
-              <TrashIcon className="mr-2 h-4 w-4" />
-              {isPending ? "Eliminando..." : "Eliminar"}
-            </DropdownMenuItem>
+
+            <AlertDialog>
+              <AlertDialogTrigger
+                className={buttonVariants({
+                  variant: "ghost",
+                  className:
+                    "text-destructive hover:bg-destructive/10 hover:text-destructive w-full justify-start px-2 py-1.5 text-sm font-normal",
+                })}
+              >
+                <TrashIcon className="mr-2 h-4 w-4" />
+                Eliminar
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    ¿Estás seguro de eliminar esta cuenta?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Si tiene transacciones asociadas será archivada. De lo
+                    contrario se eliminará permanentemente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isPending}>
+                    Cancelar
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    disabled={isPending}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isPending ? "Eliminando..." : "Eliminar"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, useState } from "react";
+import { useTransition } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTheme } from "next-themes";
@@ -21,7 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { toUserMessage } from "@/lib/errors";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 interface PreferencesFormProps {
@@ -38,38 +38,6 @@ const themeOptions = [
   { value: "dark" as const, label: "Oscuro", icon: MoonIcon },
   { value: "system" as const, label: "Sistema", icon: MonitorIcon },
 ];
-
-// cambiar esto por switch de shadcn
-function Toggle({
-  checked,
-  onChange,
-  id,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  id: string;
-}) {
-  return (
-    <button
-      id={id}
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={cn(
-        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-        checked ? "bg-primary" : "bg-muted",
-      )}
-    >
-      <span
-        className={cn(
-          "inline-block size-4 rounded-full bg-white shadow-sm transition-transform",
-          checked ? "translate-x-6" : "translate-x-1",
-        )}
-      />
-    </button>
-  );
-}
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 
@@ -202,10 +170,10 @@ export function PreferencesForm({ defaultValues }: PreferencesFormProps) {
               control={control}
               name="enablePushNotifications"
               render={({ field }) => (
-                <Toggle
+                <Switch
                   id="toggle-push"
                   checked={field.value}
-                  onChange={field.onChange}
+                  onCheckedChange={field.onChange}
                 />
               )}
             />
@@ -229,10 +197,10 @@ export function PreferencesForm({ defaultValues }: PreferencesFormProps) {
               control={control}
               name="enableEmailNotifications"
               render={({ field }) => (
-                <Toggle
+                <Switch
                   id="toggle-email"
                   checked={field.value}
-                  onChange={field.onChange}
+                  onCheckedChange={field.onChange}
                 />
               )}
             />

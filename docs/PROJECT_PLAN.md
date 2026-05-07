@@ -90,15 +90,16 @@ src/
 - [x] Server Action `archiveAccount(id)` — soft delete o bloquear si tiene transacciones
 - [x] Server Action `unarchiveAccount(id)` — soft delete o bloquear si tiene transacciones
 - [x] Query `getAccountsByUser(userId)` — usando `React.cache()` para deduplicar por request
+- [x] Query `getArchivedAccountsByUser(userId)` — usando `React.cache()` para deduplicar por request
 - [x] Query `getAccountBalance(accountId)` — calculado desde transacciones reales, no campo redundante
 
 ### 2.2 UI de Cuentas
 
-- [ ] Página `/accounts` con lista de "Bolsillos" (Nómina, Ahorros Corrientes, Ahorros LP, Cooperativa)
-- [ ] Card por cuenta mostrando: nombre, tipo, balance actual, última actividad
-- [ ] Modal/Drawer para crear cuenta nueva (formulario responsivo)
-- [ ] Modal/Drawer para editar cuenta existente
-- [ ] Confirmación antes de eliminar cuenta
+- [x] Página `/accounts` con lista de "Bolsillos" (Nómina, Ahorros Corrientes, Ahorros LP, Cooperativa)
+- [x] Card por cuenta mostrando: nombre, tipo, balance actual, última actividad
+- [x] Modal/Drawer para crear cuenta nueva (formulario responsivo)
+- [x] Modal/Drawer para editar cuenta existente
+- [x] Confirmación antes de eliminar cuenta
 - [ ] Balance total consolidado de todos los activos visible en la cabecera
 
 ### 2.3 Transferencias Interbancarias
@@ -114,16 +115,16 @@ src/
 
 ### 3.1 CRUD de Tarjetas (`CreditCard`)
 
-- [ ] Server Action `createCreditCard(data: NewCreditCard)`
-- [ ] Server Action `updateCreditCard(id, data)`
-- [ ] Server Action `deleteCreditCard(id)` — verificar que no tenga deuda pendiente
-- [ ] Query `getCreditCardsByUser(userId)`
+- [x] Server Action `createCreditCard(data: NewCreditCard)`
+- [x] Server Action `updateCreditCard(id, data)`
+- [x] Server Action `deleteCreditCard(id)` — verificar que no tenga deuda pendiente
+- [x] Query `getCreditCardsByUser(userId)`
 
 ### 3.2 Estados de Cuenta (`CardStatement`)
 
-- [ ] Server Action `createCardStatement(data: NewCardStatement)` — al registrar el corte
-- [ ] Query `getLatestStatement(cardId)` — para mostrar balance al corte
-- [ ] Cálculo automático de "balance al corte" vs "balance actual" de la tarjeta
+- [x] Server Action `createCardStatement(data: NewCardStatement)` — al registrar el corte
+- [x] Query `getLatestStatement(cardId)` — para mostrar balance al corte
+- [x] Cálculo automático de "balance al corte" vs "balance actual" de la tarjeta
 
 ### 3.3 UI de Tarjetas
 

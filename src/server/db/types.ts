@@ -187,5 +187,25 @@ export type NewBudgetGoal = z.infer<typeof insertBudgetGoalSchema>;
 
 // --- Update Models (Edición Parcial) ---
 // Extra: Generamos los tipos Partial para cuando solo quieres actualizar un par de campos
+export type UpdateUser = z.infer<typeof updateUserSchema>;
 export type UpdateAccount = z.infer<typeof updateAccountSchema>;
 export type UpdateTransaction = z.infer<typeof updateTransactionSchema>;
+export type UpdateBudgetPeriod = z.infer<typeof updateBudgetPeriodSchema>;
+export type UpdateAppSettings = z.infer<typeof updateAppSettingsSchema>;
+export type UpdateUserPreferences = z.infer<typeof updateUserPreferencesSchema>;
+export type UpdateCreditCard = z.infer<typeof updateCreditCardSchema>;
+export type UpdateCardStatement = z.infer<typeof updateCardStatementSchema>;
+export type UpdateAutomationRule = z.infer<typeof updateAutomationRuleSchema>;
+export type UpdateWebhookEvent = z.infer<typeof updateWebhookEventSchema>;
+export type UpdateCategory = z.infer<typeof updateCategorySchema>;
+export type UpdateTag = z.infer<typeof updateTagSchema>;
+export type UpdateTransactionTag = z.infer<typeof updateTransactionTagSchema>;
+export type UpdateAuditLog = z.infer<typeof updateAuditLogSchema>;
+export type UpdateRecurringTransaction = z.infer<
+  typeof updateRecurringTransactionSchema
+>;
+export type UpdateNotification = z.infer<typeof updateNotificationSchema>;
+export type UpdateNetWorthSnapshot = z.infer<
+  typeof updateNetWorthSnapshotSchema
+>;
+export type UpdateBudgetGoal = z.infer<typeof updateBudgetGoalSchema>;

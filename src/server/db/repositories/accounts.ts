@@ -1,20 +1,12 @@
 import { db } from "@/server/db";
 import { accounts, transactions } from "@/server/db/schema";
 import { eq, and, sql, asc } from "drizzle-orm";
+import { NewAccount, UpdateAccount } from "@/server/db/types";
 
 /**
  * Accounts repository - operations sobre cuentas bancarias y activos del usuario
  * Todo con RLS y optimización de cache con React.cache()
  */
-
-// ======================================================
-//                        Types
-// ======================================================
-
-export type AccountInsert = typeof accounts.$inferInsert;
-export type AccountUpdate = Partial<
-  Pick<AccountInsert, "name" | "type" | "balance" | "isOperational">
->;
 
 // ======================================================
 //                        Queries
@@ -99,7 +91,7 @@ export async function calcAccountCashFlow(accountId: string, userId: string) {
 //                        Mutations
 // ======================================================
 
-export async function insertAccount(data: AccountInsert) {
+export async function insertAccount(data: NewAccount) {
   const [inserted] = await db.insert(accounts).values(data).returning();
   return inserted ?? null;
 }
@@ -107,7 +99,7 @@ export async function insertAccount(data: AccountInsert) {
 export async function updateAccount(
   id: string,
   userId: string,
-  data: AccountUpdate,
+  data: UpdateAccount,
 ) {
   const [updated] = await db
     .update(accounts)
