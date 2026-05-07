@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import {
@@ -27,8 +27,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { FloppyDiskIcon, SpinnerIcon } from "@phosphor-icons/react";
 
-import { createAccountSchema } from "@/lib/validations/accounts";
+import {
+  CreateAccountInput,
+  createAccountSchema,
+} from "@/lib/validations/accounts";
 import { ACCOUNT_TYPES } from "@/lib/constants";
 import {
   createAccountAction,
@@ -37,6 +41,7 @@ import {
 import { Account } from "@/server/db/types";
 import { toUserMessage } from "@/lib/errors";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   checking: "Corriente",
@@ -52,13 +57,6 @@ interface AccountFormDialogProps {
   account?: Account | null;
 }
 
-type FormValues = {
-  name: string;
-  type: (typeof ACCOUNT_TYPES)[number];
-  balance: string;
-  isOperational: boolean;
-};
-
 export function AccountFormDialog({
   open,
   onOpenChange,
@@ -70,21 +68,19 @@ export function AccountFormDialog({
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
+    control, // <-- Extraemos control
     reset,
     formState: { errors },
-  } = useForm<FormValues>({
-    resolver: zodResolver(createAccountSchema) as any,
+  } = useForm<CreateAccountInput>({
+    resolver: zodResolver(createAccountSchema),
     defaultValues: {
       name: "",
-      type: "checking", // checking es un mejor default
+      type: "checking",
       balance: "0.00",
       isOperational: false,
     },
   });
 
-  // FIX: useEffect síncrono y en el top-level del componente
   useEffect(() => {
     if (open) {
       if (account) {
@@ -105,7 +101,7 @@ export function AccountFormDialog({
     }
   }, [open, account, reset]);
 
-  const onSubmit = (data: FormValues) => {
+  const onSubmit = (data: CreateAccountInput) => {
     startTransition(async () => {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
@@ -128,29 +124,34 @@ export function AccountFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden p-0 sm:max-w-[440px]">
-        {/* Header con padding dedicado para un look más limpio */}
-        <div className="px-6 pt-6 pb-4">
-          <DialogHeader>
-            <DialogTitle className="text-xl">
-              {isEditing ? "Editar Cuenta" : "Nueva Cuenta"}
-            </DialogTitle>
-            <DialogDescription>
-              {isEditing
-                ? "Modifica los detalles de esta cuenta."
-                : "Agrega una nueva cuenta o bolsillo a tu portafolio."}
-            </DialogDescription>
+      <DialogContent className="overflow-hidden rounded-2xl p-0 sm:max-w-[460px]">
+        <div className="px-6 pt-6 pb-2">
+          <DialogHeader className="space-y-3">
+            <div>
+              <DialogTitle className="text-xl tracking-tight">
+                {isEditing ? "Editar Cuenta" : "Nueva Cuenta"}
+              </DialogTitle>
+              <DialogDescription className="mt-1">
+                {isEditing
+                  ? "Modifica los detalles de esta cuenta."
+                  : "Agrega una nueva cuenta o bolsillo a tu portafolio."}
+              </DialogDescription>
+            </div>
           </DialogHeader>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 px-6 pb-6">
-          {/* Fila 1: Nombre (Ancho completo) */}
           <Field>
             <FieldLabel htmlFor="name">Nombre de la cuenta</FieldLabel>
             <FieldContent>
               <Input
                 id="name"
                 placeholder="Ej. Banco BHD - Ahorros"
+                className={cn(
+                  "h-11 shadow-sm",
+                  errors.name &&
+                    "border-destructive focus-visible:ring-destructive/20",
+                )}
                 {...register("name")}
                 aria-invalid={!!errors.name}
               />
@@ -158,97 +159,131 @@ export function AccountFormDialog({
             </FieldContent>
           </Field>
 
-          {/* Fila 2: Cuadrícula simétrica para Tipo y Balance */}
-          <div className="grid grid-cols-[1fr_1.8fr]">
-            <Field>
-              <FieldLabel
-                htmlFor="type"
-                className="text-xs font-medium tracking-wide"
-              >
-                Tipo
-              </FieldLabel>
+          <div
+            className={cn(
+              "grid items-start gap-4", // <-- items-start evita que se deformen
+              !isEditing ? "grid-cols-2" : "grid-cols-1",
+            )}
+          >
+            <Field className="flex min-w-0 flex-col justify-start">
+              <FieldLabel htmlFor="type">Tipo</FieldLabel>
               <FieldContent>
-                <Select
-                  value={watch("type")}
-                  onValueChange={(val: any) => setValue("type", val)}
-                >
-                  <SelectTrigger id="type" className="text-sm">
-                    <SelectValue placeholder="Selecciona">
-                      {watch("type")
-                        ? ACCOUNT_TYPE_LABELS[watch("type")?.toLowerCase()] ||
-                          watch("type")
-                        : "Selecciona"}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ACCOUNT_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {ACCOUNT_TYPE_LABELS[type.toLowerCase()] || type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="type"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        id="type"
+                        className={cn(
+                          "h-11 w-full text-left shadow-sm transition-colors [&>span]:truncate",
+                          errors.type &&
+                            "border-destructive focus:ring-destructive/20",
+                        )}
+                      >
+                        <SelectValue placeholder="Selecciona">
+                          {field.value
+                            ? ACCOUNT_TYPE_LABELS[field.value] || field.value
+                            : "Selecciona"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ACCOUNT_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {ACCOUNT_TYPE_LABELS[type] || type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 <FieldError errors={[errors.type]} />
               </FieldContent>
             </Field>
 
-            <Field>
-              <FieldLabel
-                htmlFor="balance"
-                className="text-xs font-medium tracking-wide"
-              >
-                Balance inicial
-              </FieldLabel>
-              <FieldContent>
-                <div className="relative flex items-center">
-                  <span className="absolute left-3 text-xs font-medium select-none">
-                    RD$
-                  </span>
-                  <Input
-                    id="balance"
-                    type="number"
-                    className="pl-10 text-right font-medium"
-                    placeholder="0.00"
-                    {...register("balance")}
-                    aria-invalid={!!errors.balance}
-                  />
+            {/* Solo mostramos el campo de balance si NO estamos editando */}
+            {!isEditing && (
+              <Field className="flex min-w-0 flex-col justify-start">
+                <FieldLabel htmlFor="balance">Balance inicial</FieldLabel>
+                <FieldContent>
+                  {/* Fijamos la altura aquí en el wrapper para igualar al Select */}
+                  <div className="relative flex h-11 items-center">
+                    <span className="text-muted-foreground absolute left-3.5 text-sm font-medium select-none">
+                      RD$
+                    </span>
+                    <Input
+                      id="balance"
+                      type="number"
+                      className={cn(
+                        "h-full w-full pl-11 text-right font-medium shadow-sm", // <-- h-full para que herede del wrapper
+                        errors.balance &&
+                          "border-destructive focus-visible:ring-destructive/20",
+                      )}
+                      placeholder="0.00"
+                      {...register("balance")}
+                      aria-invalid={!!errors.balance}
+                    />
+                  </div>
+                  <FieldError errors={[errors.balance]} />
+                </FieldContent>
+              </Field>
+            )}
+          </div>
+
+          <div className="border-border/40 bg-muted/10 overflow-hidden rounded-xl border shadow-sm transition-all">
+            <Field className="flex flex-row items-center justify-between p-4">
+              <div className="space-y-0.5">
+                <FieldLabel
+                  htmlFor="isOperational"
+                  className="text-sm leading-none font-medium"
+                >
+                  Cuenta Operativa
+                </FieldLabel>
+                <div className="text-muted-foreground text-xs">
+                  Se usará para gastos del día a día
                 </div>
-                <FieldError errors={[errors.balance]} />
+              </div>
+              <FieldContent className="m-0">
+                <Controller
+                  control={control}
+                  name="isOperational"
+                  render={({ field }) => (
+                    <Switch
+                      id="isOperational"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                />
               </FieldContent>
             </Field>
           </div>
 
-          {/* Fila 3: Tarjeta de ajustes operacionales */}
-          <Field className="border-border/50 bg-muted/20 flex flex-row items-center justify-between rounded-xl border p-4 shadow-sm">
-            <div className="space-y-1">
-              <FieldLabel
-                htmlFor="isOperational"
-                className="text-sm leading-none font-medium"
-              >
-                Cuenta Operativa
-              </FieldLabel>
-              <div className="text-xs">Se usará para gastos del día a día</div>
-            </div>
-            <FieldContent className="m-0">
-              <Switch
-                id="isOperational"
-                checked={watch("isOperational")}
-                onCheckedChange={(val) => setValue("isOperational", val)}
-              />
-            </FieldContent>
-          </Field>
-
-          {/* Footer del Modal */}
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex justify-end gap-3 pt-4">
             <Button
               type="button"
               variant="ghost"
+              className="hover:bg-muted py-4"
               onClick={() => onOpenChange(false)}
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Guardando..." : isEditing ? "Guardar" : "Crear"}
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="min-w-[120px] py-4"
+            >
+              {isPending ? (
+                <>
+                  <SpinnerIcon className="h-4 w-4 animate-spin" />
+                  <span>{isEditing ? "Guardando..." : "Creando..."}</span>
+                </>
+              ) : (
+                <>
+                  <FloppyDiskIcon className="mr-2 h-4 w-4" />
+                  <span>{isEditing ? "Guardar" : "Crear"}</span>
+                </>
+              )}
             </Button>
           </div>
         </form>

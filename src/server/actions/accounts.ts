@@ -5,6 +5,7 @@ import { cache } from "react";
 import { requireUser } from "@/lib/auth/requite-user";
 import { ok, Errors, type Result } from "@/lib/result";
 import {
+  adjustBalanceSchema,
   createAccountSchema,
   updateAccountSchema,
 } from "@/lib/validations/accounts";
@@ -19,7 +20,9 @@ import {
   findNonOperationalAccountIds,
   countTransactionsByAccount,
   calcAccountCashFlow,
+  getSystemCategoryForAdjustment,
 } from "@/server/db/repositories/accounts";
+import { insertTransferTransaction } from "../db/repositories/transactions";
 
 // ======================================================
 //                       Helpers
@@ -63,6 +66,7 @@ export async function updateAccountAction(
     ...raw,
     isOperational: parseIsOperational(raw),
   });
+
   if (!parsed.success) return Errors.validation(parsed.error);
 
   const updated = await updateAccount(id, user.id, parsed.data);
@@ -129,6 +133,51 @@ export async function unarchiveAccountAction(
 
   revalidatePath("/accounts");
   return ok({ id: updated.id });
+}
+
+export async function adjustAccountBalanceAction(
+  formData: FormData,
+): Promise<Result<{ id: string }>> {
+  const user = await requireUser();
+
+  const parsed = adjustBalanceSchema.safeParse(
+    Object.fromEntries(formData.entries()),
+  );
+  if (!parsed.success) return Errors.validation(parsed.error);
+
+  const { accountId, targetBalance, reason } = parsed.data;
+
+  // 1. Calcular balance actual real
+  const account = await findAccountById(accountId, user.id);
+  if (!account) return Errors.notFound("Cuenta");
+
+  const cashFlow = await calcAccountCashFlow(accountId, user.id);
+  const currentBalance = Number(account.balance) + cashFlow;
+
+  // 2. Calcular la diferencia
+  const difference = targetBalance - currentBalance;
+
+  if (difference === 0) return ok({ id: accountId });
+
+  // 3. Registrar el ajuste como transacción
+  const adjustmentCategory = await getSystemCategoryForAdjustment();
+  if (!adjustmentCategory) return Errors.dbError();
+
+  const inserted = await insertTransferTransaction({
+    userId: user.id,
+    accountId,
+    amount: String(Math.abs(difference)),
+    type: difference > 0 ? "income" : "expense",
+    date: new Date(),
+    description: reason ?? "Ajuste de balance",
+    isAdjustment: true,
+    categoryId: adjustmentCategory.id,
+  });
+
+  if (!inserted) return Errors.dbError();
+
+  revalidatePath("/accounts");
+  return ok({ id: inserted.id });
 }
 
 // ======================================================

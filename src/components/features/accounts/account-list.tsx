@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { PlusIcon } from "@phosphor-icons/react";
+import { ArrowsLeftRightIcon, PlusIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { AccountCard } from "./account-card";
 import { AccountFormDialog } from "./account-form-dialog";
+import { TransferFormDialog } from "./transfer-form-dialog";
 import { Account } from "@/server/db/types";
 
 interface AccountListProps {
@@ -13,6 +14,7 @@ interface AccountListProps {
 
 export function AccountList({ accounts }: AccountListProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
   const handleCreate = () => {
@@ -36,9 +38,19 @@ export function AccountList({ accounts }: AccountListProps) {
             Administra tus cuentas bancarias y ahorros.
           </p>
         </div>
-        <Button onClick={handleCreate} size="icon" className="h-10 w-10">
-          <PlusIcon className="h-4 w-4" weight="bold" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setIsTransferOpen(true)}
+            variant="secondary"
+            className="h-10 px-4"
+          >
+            <ArrowsLeftRightIcon className="h-4 w-4" />
+            Transferir
+          </Button>
+          <Button onClick={handleCreate} size="icon" className="h-10 w-10">
+            <PlusIcon className="h-4 w-4" weight="bold" />
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -66,6 +78,12 @@ export function AccountList({ accounts }: AccountListProps) {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         account={editingAccount}
+      />
+
+      <TransferFormDialog
+        open={isTransferOpen}
+        onOpenChange={setIsTransferOpen}
+        accounts={accounts}
       />
     </div>
   );

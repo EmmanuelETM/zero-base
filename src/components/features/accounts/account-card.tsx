@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
   BankIcon,
   PiggyBankIcon,
@@ -10,6 +10,8 @@ import {
   PencilSimpleIcon,
   ClockCounterClockwiseIcon,
   DotsThreeIcon,
+  CurrencyDollarIcon,
+  ArchiveIcon,
 } from "@phosphor-icons/react";
 import {
   DropdownMenu,
@@ -29,11 +31,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { buttonVariants } from "@/components/ui/button";
-import { deleteAccountAction } from "@/server/actions/accounts";
+import {
+  archiveAccountAction,
+  deleteAccountAction,
+} from "@/server/actions/accounts";
 import { Account } from "@/server/db/types";
 import { formatCurrency, formatDate } from "@/lib/formatter";
 import { toast } from "sonner";
 import { toUserMessage } from "@/lib/errors";
+import { AdjustBalanceDialog } from "./adjust-balance-dialog";
 
 const ACCOUNT_ICONS: Record<string, React.ElementType> = {
   checking: BankIcon,
@@ -59,6 +65,7 @@ interface AccountCardProps {
 export function AccountCard({ account, onEdit }: AccountCardProps) {
   const Icon = ACCOUNT_ICONS[account.type] || BankIcon;
   const [isPending, startTransition] = useTransition();
+  const [showAdjustDialog, setShowAdjustDialog] = useState(false);
 
   const handleDelete = () => {
     startTransition(async () => {
@@ -72,6 +79,17 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
           ? `"${account.name}" archivada.`
           : `"${account.name}" eliminada.`,
       );
+    });
+  };
+
+  const handleArchive = () => {
+    startTransition(async () => {
+      const result = await archiveAccountAction(account.id);
+      if (!result.ok) {
+        toast.error(toUserMessage(result.error));
+        return;
+      }
+      toast.success(`"${account.name}" archivada.`);
     });
   };
 
@@ -107,9 +125,20 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
             <DotsThreeIcon className="size-6" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(account)}>
-              <PencilSimpleIcon className="mr-2 h-4 w-4" />
+            <DropdownMenuItem
+              className="px-2.5"
+              onClick={() => onEdit(account)}
+            >
+              <PencilSimpleIcon className="mr-1.5 h-4 w-4" />
               Editar
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              className="px-2.5"
+              onClick={() => setShowAdjustDialog(true)}
+            >
+              <CurrencyDollarIcon className="mr-1.5 h-4 w-4" />
+              Ajustar
             </DropdownMenuItem>
 
             <AlertDialog>
@@ -117,7 +146,43 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
                 className={buttonVariants({
                   variant: "ghost",
                   className:
-                    "text-destructive hover:bg-destructive/10 hover:text-destructive w-full justify-start px-2 py-1.5 text-sm font-normal",
+                    "hover:bg-destructive/10 hover:text-destructive w-full justify-start py-1.5 text-sm font-normal",
+                })}
+              >
+                <ArchiveIcon className="mr-2 h-4 w-4" />
+                Archivar
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    ¿Estás seguro de archivar esta cuenta?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Al archivar esta cuenta no se podrá usar para nuevas
+                    transacciones, pero no se eliminarán los datos.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isPending}>
+                    Cancelar
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleArchive}
+                    disabled={isPending}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isPending ? "Archivando..." : "Archivar"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog>
+              <AlertDialogTrigger
+                className={buttonVariants({
+                  variant: "ghost",
+                  className:
+                    "text-destructive hover:bg-destructive/10 hover:text-destructive w-full justify-start py-1.5 text-sm font-normal",
                 })}
               >
                 <TrashIcon className="mr-2 h-4 w-4" />
@@ -153,9 +218,7 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
 
       <div className="relative z-10 mt-6 flex items-end justify-between">
         <div>
-          <p className="text-muted-foreground text-sm font-medium">
-            Balance Actual
-          </p>
+          <p className="text-muted-foreground text-sm font-medium">Balance</p>
           <p className="text-foreground text-2xl font-bold tracking-tight">
             {formatCurrency(account.balance)}
           </p>
@@ -168,6 +231,12 @@ export function AccountCard({ account, onEdit }: AccountCardProps) {
           </span>
         </div>
       </div>
+
+      <AdjustBalanceDialog
+        open={showAdjustDialog}
+        onOpenChange={setShowAdjustDialog}
+        account={account}
+      />
     </div>
   );
 }

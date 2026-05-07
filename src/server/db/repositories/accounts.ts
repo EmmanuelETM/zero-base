@@ -1,12 +1,7 @@
 import { db } from "@/server/db";
-import { accounts, transactions } from "@/server/db/schema";
+import { accounts, categories, transactions } from "@/server/db/schema";
 import { eq, and, sql, asc } from "drizzle-orm";
 import { NewAccount, UpdateAccount } from "@/server/db/types";
-
-/**
- * Accounts repository - operations sobre cuentas bancarias y activos del usuario
- * Todo con RLS y optimización de cache con React.cache()
- */
 
 // ======================================================
 //                        Queries
@@ -85,6 +80,14 @@ export async function calcAccountCashFlow(accountId: string, userId: string) {
       ),
     );
   return Number(row?.flow ?? 0);
+}
+
+export async function getSystemCategoryForAdjustment() {
+  return db
+    .select()
+    .from(categories)
+    .where(eq(categories.name, "Ajuste de Balance"))
+    .then((rows) => rows[0] || null);
 }
 
 // ======================================================

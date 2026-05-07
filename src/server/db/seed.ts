@@ -231,6 +231,15 @@ async function main() {
       isFixed: false,
       isFeeCategory: true,
     },
+    {
+      name: "Ajuste de Balance",
+      icon: "balance-scale",
+      color: "#6366f1",
+      isSystem: true,
+      type: "income",
+      isFixed: false,
+      isFeeCategory: false,
+    },
   ] as const;
 
   // Obtenemos las categorías del sistema existentes para no duplicarlas

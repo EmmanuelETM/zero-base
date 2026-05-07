@@ -104,10 +104,10 @@ src/
 
 ### 2.3 Transferencias Interbancarias
 
-- [ ] Server Action `createTransfer(fromAccount, toAccount, amount, commission?)` — registra dos transacciones atómicamente (débito + crédito) y una de gasto si hay comisión
-- [ ] UI: Formulario de transferencia con selector de origen/destino, monto y toggle "aplicar comisión LBTR (RD$100)"
-- [ ] Validación: no permitir origen = destino, balance suficiente en cuenta origen
-- [ ] Tipo de transacción `transfer` diferenciado en la BD para no contaminar el flujo de caja
+- [x] Server Action `createTransfer(fromAccount, toAccount, amount, commission?)` — registra dos transacciones atómicamente (débito + crédito) y una de gasto si hay comisión
+- [x] UI: Formulario de transferencia con selector de origen/destino, monto y toggle "aplicar comisión LBTR (RD$100)"
+- [x] Validación: no permitir origen = destino, balance suficiente en cuenta origen
+- [x] Tipo de transacción `transfer` diferenciado en la BD para no contaminar el flujo de caja
 
 ---
 

@@ -600,7 +600,6 @@ export const transactions = pgTable(
       "0.00",
     ),
 
-    // FIX ARCH: Soporte para compras internacionales (Amazon, Spotify, etc.)
     originalCurrency: text("original_currency").default("DOP").notNull(),
     originalAmount: decimal("original_amount", { precision: 12, scale: 2 }),
     exchangeRate: decimal("exchange_rate", { precision: 10, scale: 4 }),
@@ -621,6 +620,7 @@ export const transactions = pgTable(
       () => accounts.id,
     ),
 
+    isAdjustment: boolean("is_adjustment").default(false).notNull(),
     isAutomatic: boolean("is_automatic").default(false).notNull(),
     automationRuleId: uuid("automation_rule_id").references(
       () => automationRules.id,
